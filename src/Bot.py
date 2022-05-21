@@ -9,8 +9,8 @@ import sys
 from sc2.unit import Unit
 
 from src.Manager import Manager
-from src.ProductionQueue import ProductionQueue
-from src.QueueItem import QueueItem
+# from src.ProductionQueue import ProductionQueue
+# from src.QueueItem import QueueItem
 from src.WorkerManager import WorkerManager
 
 print(sys.version)
@@ -45,7 +45,7 @@ class WorkerRushBot(BotAI):
             # search in other managers
 
     async def on_start(self):
-        self.next_item = QueueItem(None)
+        #self.next_item = QueueItem(None)
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units} ## why doesnt work with all_my_units?
         self.w_managers.append(WorkerManager(self, self.townhalls[0]))
         # self.w_managers[0].add_workers(self.workers)
