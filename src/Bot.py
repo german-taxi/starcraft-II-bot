@@ -8,10 +8,10 @@ import sys
 
 from sc2.unit import Unit
 
-from Manager import Manager
-from ProductionQueue import ProductionQueue
-from QueueItem import QueueItem
-from WorkerManager import WorkerManager
+from src.Manager import Manager
+from src.ProductionQueue import ProductionQueue
+from src.QueueItem import QueueItem
+from src.WorkerManager import WorkerManager
 
 print(sys.version)
 
