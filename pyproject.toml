@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "german-taxi"
+version = "0.1.0"
+description = "StarCraft II bot or something like that"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pip = "^22.1.1"
+burnysc2 = "^6.0.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
