@@ -8,16 +8,22 @@ import sys
 
 from sc2.unit import Unit
 
-from src.Manager import Manager
+# from src.Manager import Manager
 # from src.ProductionQueue import ProductionQueue
 # from src.QueueItem import QueueItem
-from src.WorkerManager import WorkerManager
+# from src.WorkerManager import WorkerManager
+
+
+from Manager import Manager
+from WorkerManager import WorkerManager
 
 print(sys.version)
 
 SCV_BUILD_TIME = 12
 
 #  TODO: Calculate the time it takes to walk somewhere
+
+
 class WorkerRushBot(BotAI):
     def __init__(self):
         super().__init__()
@@ -46,15 +52,15 @@ class WorkerRushBot(BotAI):
 
     async def on_start(self):
         #self.next_item = QueueItem(None)
-        self.unit_by_tag = {unit.tag: unit for unit in self.all_units} ## why doesnt work with all_my_units?
+        # why doesnt work with all_my_units?
+        self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         self.w_managers.append(WorkerManager(self, self.townhalls[0]))
         # self.w_managers[0].add_workers(self.workers)
-
 
     async def on_step(self, iteration: int):
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         # if (iteration == 0):
-            #self.w_managers[0].redistribute_workers()
+        # self.w_managers[0].redistribute_workers()
         #     self.on_game_start()
         if (iteration % 1 == 0):
             for w_manager in self.w_managers:
@@ -63,7 +69,6 @@ class WorkerRushBot(BotAI):
             # self.worker_manager.update()
        # print(self.workers.amount, "workers amount")
        # print(self.workers[0].is_carrying_minerals, "is carying minerals")
-
 
     # self.worker_manager.update()
         # base_location = self.expansion_locations_list[len(self.townhalls) - 1]
@@ -79,10 +84,12 @@ class WorkerRushBot(BotAI):
         if self.can_afford(self.next_item.unit_type):
             if self.next_item.unit_type == UnitTypeId.COMMANDCENTER:  # TODO for all buildings
                 worker_candidates = self.workers.filter(lambda worker: (worker.is_collecting or worker.is_idle)
-                                                                       and worker.tag not in self.unit_tags_received_action)
+                                                        and worker.tag not in self.unit_tags_received_action)
                 if worker_candidates:
-                    building_worker = worker_candidates.closest_to(self.next_item.location)
-                    building_worker.build(self.next_item.unit_type, self.next_item.location)
+                    building_worker = worker_candidates.closest_to(
+                        self.next_item.location)
+                    building_worker.build(
+                        self.next_item.unit_type, self.next_item.location)
 
             elif self.next_item.unit_type == UnitTypeId.SCV:          # SCV only
                 for cc in self.townhalls:
@@ -91,11 +98,7 @@ class WorkerRushBot(BotAI):
                         break
 
 
-
-
-run_game(maps.get("AcropolisLE"),[
+run_game(maps.get("AcropolisLE"), [
     Bot(Race.Terran, WorkerRushBot()),
     Computer(Race.Protoss, Difficulty.Medium)
 ], realtime=True)
-
-

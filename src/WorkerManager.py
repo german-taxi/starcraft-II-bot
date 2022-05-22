@@ -11,10 +11,10 @@ import sys
 
 from sc2.units import Units
 
-from src.Manager import Manager
+# from src.Manager import Manager
 # from src.ProductionQueue import ProductionQueue
 # from src.QueueItem import QueueItem
-from src.Manager import Manager
+from Manager import Manager
 
 
 #  TODO: Mine, worker micro and mules, Building creation, Base relocation, Repair ?
@@ -85,7 +85,8 @@ class WorkerManager(Manager):
 
     def remove_tag(self, tag):
         print("REMOVING TAGGGGGGGGGGGGGG")
-        self.workers = np.delete(self.workers, np.where(self.workers[:, 0] == tag), axis=0)
+        self.workers = np.delete(self.workers, np.where(
+            self.workers[:, 0] == tag), axis=0)
         # self.workers.remove(tag)
 
     def get_index(self, tag):
@@ -140,13 +141,15 @@ class WorkerManager(Manager):
             # self
             # self.building_workers.append(worker)
         else:
-            print("No worker available for building")  # TODO: Handeling of this
+            # TODO: Handeling of this
+            print("No worker available for building")
 
     # Get closest Not MINING worker, If have cargo, return then build structure, can remake with closest_to
     def get_worker_for_structure(self, target):
         distance_to_target = [target.distance_to(x) for x in
                               self.mineral_worker_tags]  # only mineral workers for now, TODO: Gas workers
-        closest_worker = self.mineral_worker_tags[distance_to_target.index(min(distance_to_target))]
+        closest_worker = self.mineral_worker_tags[distance_to_target.index(
+            min(distance_to_target))]
         # self.mineral_workers.closest_to(target)
         return closest_worker
 
@@ -159,7 +162,8 @@ class WorkerManager(Manager):
             self.gas_fields = self.bot.vespene_geyser.closer_than(10, self.base.position) \
                 .sorted(lambda x: x.distance_to(self.base.position))
 
-            self.max_mineral_workers = self.WORKERS_PER_MINERAL * len(self.mineral_fields)
+            self.max_mineral_workers = self.WORKERS_PER_MINERAL * \
+                len(self.mineral_fields)
             self.max_gas_workers = self.WORKERS_PER_GAS * len(self.gas_fields)
 
     def redistribute_workers(self):
@@ -170,7 +174,7 @@ class WorkerManager(Manager):
             for i, mineral in enumerate(self.mineral_fields):
                 if self.mineral_occupation[i] < self.WORKERS_PER_MINERAL:
                     return i, mineral
-        return None, None ## not sure waht to do here
+        return None, None  # not sure waht to do here
 
     # Assigning workers to the closest mineral fields, max 2 workers per field
     def split_workers_to_minerals_(self, workers):
@@ -191,7 +195,8 @@ class WorkerManager(Manager):
             for i in range(self.WORKERS_PER_MINERAL - mineral_field.assigned_harvesters):
                 if len(free_worker_units) > 0:
                     print("Assigning worker to mineral field")
-                    closest_worker = free_worker_units.closest_to(mineral_field)
+                    closest_worker = free_worker_units.closest_to(
+                        mineral_field)
                     self.update_info(closest_worker, mineral_field.tag, 1)
                     free_worker_units.remove(closest_worker)
                     self.mineral_worker_tags.add(closest_worker.tag)
