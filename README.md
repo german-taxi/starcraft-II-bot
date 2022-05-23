@@ -1,7 +1,7 @@
 <!-- PROJECT SHIELDS -->
 # starcraft-II-bot
-[![Contributors][contributors-shield]][contributors-url]
-[![Issues][issues-shield]][issues-url]
+[![Contributors][contributors-url]
+[![Issues]][issues-url]
 [![MIT License][license-shield]][license-url]
 
 ---
