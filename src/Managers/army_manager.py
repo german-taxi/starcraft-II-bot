@@ -1,7 +1,7 @@
 import numpy as np
 from sc2.ids.ability_id import AbilityId
 from sc2.units import Units
-from src.Managers.Manager import Manager
+from Managers.manager import Manager
 
 
 class ArmyManager(Manager):

@@ -6,7 +6,7 @@ from sc2.units import Units
 # from src.Manager import Manager
 # from src.ProductionQueue import ProductionQueue
 # from src.QueueItem import QueueItem
-from src.Managers.Manager import Manager
+from Managers.manager import Manager
 
 
 #  TODO: Mine, worker micro and mules, Building creation, Base relocation, Repair ?

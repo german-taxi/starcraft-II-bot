@@ -11,11 +11,11 @@ from sc2.unit import Unit
 # from src.Manager import Manager
 # from src.ProductionQueue import ProductionQueue
 # from src.QueueItem import QueueItem
-from src.HeatMaps.DangerMap import DangerMap
-from src.HeatMaps.DefendedAreaMap import DefendedAreaMap
-from src.Managers.ArmyManager import ArmyManager
-from src.Managers.WorkerManager import WorkerManager
-from src.Helper.TimeToTravel import TimeToTravel
+from HeatMaps.danger_map import DangerMap
+from HeatMaps.defender_area_map import DefendedAreaMap
+from Managers.army_manager import ArmyManager
+from Managers.worker_manager import WorkerManager
+from Helper.time_to_travel_map import TimeToTravel
 
 print(sys.version)
 
