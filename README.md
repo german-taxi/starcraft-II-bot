@@ -8,28 +8,17 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-<style>
-    #german-taxi-logo {
-        border-radius: 20px;
-        height: 160px;
-        width: 160px;
-    }
-</style>
 
-  <a href="https://github.com/github_username/repo_name">
+  <!-- <a href="https://github.com/github_username/repo_name">
     <img src="assets/images/german-taxi-logo.jpg" alt="Logo" width="160" height="160" id='german-taxi-logo' >
-  </a>
+  </a> -->
 
-<style>
-    #project-title {
-        font-size: 24px;
-        font-weight: bold;
-        line-height: 32px;
-        margin: 10px;
-    }
-</style>
+<a href="https://github.com/german-taxi/starcraft-II-bot">
+    <img src="assets/images/german-taxi-gif-logo.gif" alt="animated-logo" height="160" width="160" id="german-taxi-animated-logo" >
+</a>
 
-<h2 align="center" id="project-title">starcraft-II-bot</h2>
+![](/assets/readme_objects/project_title.svg)
+<h3 align="center" id="project-title">starcraft-II-bot</h3>
 
 <p align="center" >
     A (not very) intelligent StarCraft II bot
