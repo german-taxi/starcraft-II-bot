@@ -11,11 +11,10 @@ from sc2.unit import Unit
 from HeatMaps.danger_map import DangerMap
 from HeatMaps.defender_area_map import DefendedAreaMap
 from Managers.army_manager import ArmyManager
+from Managers.manager import Manager
 from Managers.worker_manager import WorkerManager
-from Helper.time_to_travel_map import TimeToTravel
+from Helpers.time_to_travel_map import TimeToTravel
 
-from manager import Manager
-from worker_manager import WorkerManager
 
 print(sys.version)
 
@@ -42,10 +41,12 @@ class WorkerRushBot(BotAI):
         if self.can_afford(self.next_item.unit_type):
             if self.next_item.unit_type == UnitTypeId.COMMANDCENTER:  # TODO for all buildings
                 worker_candidates = self.workers.filter(lambda worker: (worker.is_collecting or worker.is_idle)
-                                                                       and worker.tag not in self.unit_tags_received_action)
+                                                        and worker.tag not in self.unit_tags_received_action)
                 if worker_candidates:
-                    building_worker = worker_candidates.closest_to(self.next_item.location)
-                    building_worker.build(self.next_item.unit_type, self.next_item.location)
+                    building_worker = worker_candidates.closest_to(
+                        self.next_item.location)
+                    building_worker.build(
+                        self.next_item.unit_type, self.next_item.location)
 
             elif self.next_item.unit_type == UnitTypeId.SCV:  # SCV only
                 for cc in self.townhalls:
@@ -73,10 +74,10 @@ class WorkerRushBot(BotAI):
             # search in other managers
 
     async def on_start(self):
-        self.unit_by_tag = {unit.tag: unit for unit in self.all_units}  # why doesn't work with all_my_units?
+        # why doesn't work with all_my_units?
+        self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         self.w_managers.append(WorkerManager(self, self.townhalls[0]))
         self.a_managers.append(ArmyManager(self))
-
 
         self.danger_map = DangerMap(self, [640, 640])
         self.defended_area_map = DefendedAreaMap(self, [640, 640])
@@ -101,7 +102,6 @@ if __name__ == "__main__":
         Bot(Race.Terran, WorkerRushBot()),
         Computer(Race.Protoss, Difficulty.Medium)
     ], realtime=True)
-
 
 
 """
