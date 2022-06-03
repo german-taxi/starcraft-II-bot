@@ -141,7 +141,7 @@ class WorkerRushBot(BotAI):
                 print("No more items to build")
                 # TODO: add more items to build
 
-            await self.s_managers[0].scout()
+            # await self.s_managers[0].scout()
 
         if iteration % self.medium_iteration_speed == 0:
             pass
