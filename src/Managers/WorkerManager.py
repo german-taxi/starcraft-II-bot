@@ -1,5 +1,6 @@
 import numpy as np
 from sc2.ids.ability_id import AbilityId
+from sc2.ids.unit_typeid import UnitTypeId
 
 from sc2.units import Units
 
@@ -125,12 +126,18 @@ class WorkerManager(Manager):
     def assign_worker(self, worker, target):
         worker.gather(target)
 
-    def build_structure(self, structure, target):
-        worker = self.get_worker_for_structure(target)
-        if worker:
-            worker.build(structure, target)
+    def build_structure(self, structure):
+        map_center = self.bot.game_info.map_center
+        position_towards_map_center = self.bot.start_location.towards(map_center, distance=5)
+        placement_position = await self.bot.find_placement(UnitTypeId.SPAWNINGPOOL, near=position_towards_map_center,
+                                                           placement_step=1)
+        
+        worker = self.get_worker_for_structure(placement_position)
+
+        if worker and placement_position:
+            worker.build(structure, placement_position)
             # self
-            # self.building_workers.append(worker)
+            self.building_workers.append(worker)
         else:
             # TODO: Handeling of this
             print("No worker available for building")
