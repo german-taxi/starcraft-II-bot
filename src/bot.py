@@ -8,13 +8,15 @@ import sys
 
 from sc2.unit import Unit
 
-from HeatMaps.danger_map import DangerMap
-from HeatMaps.defender_area_map import DefendedAreaMap
-from Managers.army_manager import ArmyManager
-from Managers.manager import Manager
-from Managers.worker_manager import WorkerManager
-from Helpers.time_to_travel_map import TimeToTravel
-
+# from src.Manager import Manager
+# from src.ProductionQueue import ProductionQueue
+# from src.QueueItem import QueueItem
+from src.Build import Build
+from src.HeatMaps.danger_map import DangerMap
+from src.HeatMaps.defender_area_map import DefendedAreaMap
+from src.Managers.army_manager import ArmyManager
+from src.Managers.worker_manager import WorkerManager
+from src.Helpers.time_to_travel_map import TimeToTravel
 
 print(sys.version)
 
@@ -33,6 +35,7 @@ class WorkerRushBot(BotAI):
         self.danger_map = None
         self.defended_area_map = None
         self.time_to_travel = None
+        self.build = None
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
@@ -81,20 +84,39 @@ class WorkerRushBot(BotAI):
 
         self.danger_map = DangerMap(self, [640, 640])
         self.defended_area_map = DefendedAreaMap(self, [640, 640])
+        self.build = Build(self)
         # self.time_to_travel = TimeToTravel(self)
 
     async def on_step(self, iteration: int):
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
 
-        if (iteration % self.fast_iteration_speed == 0):
+        if iteration % self.fast_iteration_speed == 0:
             for w_manager in self.w_managers:
                 w_manager.update()
 
-        if (iteration % self.medium_iteration_speed == 0):
+            next_item = self.build.get_next_item()
+            if next_item and self.can_afford(next_item.unit_type):
+                self.produce(next_item)
+
+
+        if iteration % self.medium_iteration_speed == 0:
             pass
 
-        if (iteration % self.slow_iteration_speed == 0):
+        if iteration % self.slow_iteration_speed == 0:
             pass
+
+    def produce(self, unit):
+        # find who can produce it
+        producer = None
+
+        if unit.is_building():
+            self.w_managers[0].build_structure(unit)
+        #         if p.can
+        #     producer = self.townhalls.closest_to(unit.location)
+        # for cc in self.townhalls:
+        #     if cc.is_idle:  # no queue
+        #         cc.train(unit_type)
+        #         break
 
 
 if __name__ == "__main__":
@@ -102,9 +124,3 @@ if __name__ == "__main__":
         Bot(Race.Terran, WorkerRushBot()),
         Computer(Race.Protoss, Difficulty.Medium)
     ], realtime=True)
-
-
-"""
-Do reasearch about 
-
-"""
