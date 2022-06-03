@@ -1,196 +1,136 @@
-import numpy as np
-from sc2.ids.ability_id import AbilityId
-
-from sc2.units import Units
-
-# from src.Manager import Manager
-# from src.ProductionQueue import ProductionQueue
-# from src.QueueItem import QueueItem
-from Managers.manager import Manager
+from sc2.ids.unit_typeid import UnitTypeId
 
 
-#  TODO: Mine, worker micro and mules, Building creation, Base relocation, Repair ?
-#  TODO: calculate available mineral fields and gas fields
-class WorkerManager(Manager):
-    def __init__(self, bot, base=None):
-        super().__init__()
+class MineralField:
+    def __init__(self, bot, tag):
         self.bot = bot
-        self.base = base
-        self.WORKERS_PER_GAS = 3
-        self.WORKERS_PER_MINERAL = 2
-        self.max_mineral_workers = 0
-        self.max_gas_workers = 0
-        self.workers = np.empty((0, 2))
-        self.workers_target = Units([], self.bot)
-        self.mineral_worker_tags = set()  # maybe join with gas workers
-        self.gas_workers = []
-        self.mules = []
-        self.mineral_fields = []
-        self.mineral_occupation = np.zeros(8)
-        self.gas_fields = []
-        self.building_workers = []
-        # time_to_walk = mineral_fields.distance_to(self.base.position) / self.mineral_worker.move_speed
-
-    def add_workers(self, workers_to_add, where_to_add=None):
-        tags = np.array([[x.tag, None] for x in workers_to_add])
-        if where_to_add is None:
-            where_to_add = self.workers
-        self.workers = np.append(where_to_add, tags, axis=0)
-        print(self.workers)
-        print(len(self.workers), "workers added")
-        self.update_collectable_fields()
-        if self.base is not None:
-            print("send to work")
-            print(tags)
-            print(tags[:, 0])
-            self.send_to_work(tags[:, 0])
-        # else handle, maybe wait or something
-
-    def remove_worker(self, tag):
-        pass
-
-    def send_to_work(self, tags):
-        if len(self.mineral_worker_tags) < self.max_mineral_workers:
-            print(len(self.mineral_worker_tags), self.max_mineral_workers)
-            self.find_minerals(tags)
-        else:
-            print(len(self.mineral_worker_tags), self.max_mineral_workers)
-            print("too many mineral workers")
-        # or self.find_gas(tags)
-
-    def get_unit_by_tag(self, tag):
-        unit = self.bot.unit_by_tag.get(tag)
-        if unit is None:   # cant be none anymre since we remove the tag when the unit is destroyed
-            print("unit not found")
-            return None
-        #     self.remove_tag(tag)
-        return unit
-
-    def get_units_by_tag(self, tags):
-        units = Units([], self.bot)
-        for tag in tags:
-            unit = self.get_unit_by_tag(tag)
-            if unit is not None:
-                units.append(unit)
-        return units
-
-    def remove_tag(self, tag):
-        print("REMOVING TAGGGGGGGGGGGGGG")
-        self.workers = np.delete(self.workers, np.where(
-            self.workers[:, 0] == tag), axis=0)
-        # self.workers.remove(tag)
-
-    def get_index(self, tag):
-        return np.where(self.workers[:, 0] == tag)[0][0]
-
-    def worker_gather(self, worker):
-        target_index = self.get_index(worker.tag)
-        target_tag = self.workers[target_index, 1]
-        target = self.bot.unit_by_tag.get(target_tag)
-        worker.gather(target, queue=False)
-        # if worker.target_unit is not None:
-        #     worker.gather(worker.target_unit, queue=False)
-        # else:
-        #     pass  # assign new target and send to gather
-
-    def find_minerals(self, free_workers):
-        # free_workers = self.workers[:, 0]  ## TODO: add check if worker is already mining
-        self.split_workers_to_minerals_(free_workers)
+        self.tag = tag
+        self.mineral_worker_tags = set()
+        self.mineral_occupation = 0
 
     def update(self):
-        #print("update workers")
-        self.fix_workers()
+        workers = self.bot.get_units_by_tag(self.mineral_worker_tags)
 
-    def fix_workers(self):
-        workers = self.get_units_by_tag(self.mineral_worker_tags)
         for worker in workers:
-            #print(worker.is_carrying_minerals, worker.is_gathering)
-            if worker.is_gathering:
-                index = self.get_index(worker.tag)
-                if worker.orders[0].target != self.workers[index, 1]:
-                    self.worker_gather(worker)
-                    print("Send worker to gather, reason wrong target")
+            if worker.is_gathering or worker.is_idle:
+                if not worker.orders or worker.orders[0].target != self.tag:
+                    mineral = self.bot.unit_by_tag.get(self.tag)
+                    worker.gather(mineral, queue=False)
+                    print("Send worker to gather, reason wrong target/idle")  # Debug
 
-    def update_info(self, worker, info, i):
-        index = self.get_index(worker.tag)
-        self.workers[index][i] = info
+    def add_worker(self, worker_tag):
+        self.mineral_worker_tags.add(worker_tag)
+        self.mineral_occupation += 1
+
+    def remove_worker(self, worker_tag):
+        if worker_tag in self.mineral_worker_tags:
+            self.mineral_worker_tags.discard(worker_tag)
+            self.mineral_occupation -= 1
+            return True
+        return False
+
+
+#  TODO: micro mules,  Base relocation, Repair ?
+class WorkerManager:
+    def __init__(self, bot, base=None):
+        self.bot = bot
+        self.mineral_fields = []
+        self.gas_fields = []
+        self.base = base
+        self.free_worker_tags = []
+        self.building_worker_tags = []
+        self.WORKERS_PER_MINERAL = 2
+        self.create_collectable_fields()
+
+    def update(self):
+        self.fix_idle_buildings_worker()
+        self.fix_free_workers()
+
+        for mineral_field in self.mineral_fields:
+            mineral_field.update()
+
+    def create_collectable_fields(self, position=None):
+        if position is None:
+            position = self.base.position
+
+        if position:
+            mineral_fields = self.bot.mineral_field.closer_than(10, position) \
+                .sorted(lambda x: x.distance_to(position))
+
+            # maybe don't sort gast fields
+            gas_fields = self.bot.vespene_geyser.closer_than(10, position) \
+                .sorted(lambda x: x.distance_to(position))
+
+            for mineral_field in mineral_fields:
+                self.mineral_fields.append(
+                    MineralField(self.bot, mineral_field.tag))
 
     def set_base(self, base):
         self.base = base
 
-    def set_base_rally(self, base_rally):
-        self.base(AbilityId.RALLY_BUILDING, base_rally)
+    def add_worker_tag(self, worker_tag):
+        self.free_worker_tags.append(worker_tag)
 
-    # todo: add a check if worker should go to mineral or base first
-    def assign_worker(self, worker, target):
-        worker.gather(target)
+    def remove_worker_tag(self, worker_tag):
+        removed = False
+        for mineral_field in self.mineral_fields:
+            removed = mineral_field.remove_worker(worker_tag)
+            if removed:
+                break
+        return removed
 
-    def build_structure(self, structure, target):
-        worker = self.get_worker_for_structure(target)
-        if worker:
-            worker.build(structure, target)
-            # self
-            # self.building_workers.append(worker)
-        else:
-            # TODO: Handeling of this
-            print("No worker available for building")
+    def fix_idle_buildings_worker(self):
+        tags_to_remove = []
 
-    # Get closest Not MINING worker, If have cargo, return then build structure, can remake with closest_to
+        building_workers = self.bot.get_units_by_tag(self.building_worker_tags)
+        for building_worker in building_workers:
+            if building_worker.is_idle:
+                tags_to_remove.append(building_worker.tag)
+
+        for tag in tags_to_remove:
+            self.building_worker_tags.remove(tag)
+            self.free_worker_tags.append(tag)
+
+    def fix_free_workers(self):
+        tags_to_remove = []
+        for free_worker_tag in self.free_worker_tags:
+            for mineral_field in self.mineral_fields:
+                if mineral_field.mineral_occupation < self.WORKERS_PER_MINERAL:
+                    mineral_field.add_worker(free_worker_tag)
+                    tags_to_remove.append(free_worker_tag)
+                    break
+            else:
+                break
+        for tag in tags_to_remove:
+            self.free_worker_tags.remove(tag)
+        if len(self.free_worker_tags) != 0:
+            print("Not all workers were assigned! Left: ",
+                  len(self.free_worker_tags))
+            # TODO: pass to other worker manager
+
     def get_worker_for_structure(self, target):
-        distance_to_target = [target.distance_to(x) for x in
-                              self.mineral_worker_tags]  # only mineral workers for now, TODO: Gas workers
-        closest_worker = self.mineral_worker_tags[distance_to_target.index(
-            min(distance_to_target))]
-        # self.mineral_workers.closest_to(target)
+        all_workers = self.bot.all_units(UnitTypeId.SCV)
+        # self.mineral_worker_tags >- self.bot.workers
+        closest_worker = all_workers.closest_to(target)
+
         return closest_worker
 
-    def update_collectable_fields(self):
-        if self.base.position:
-            self.mineral_fields = self.bot.mineral_field.closer_than(10, self.base.position) \
-                .sorted(lambda x: x.distance_to(self.base.position))
+    async def build_structure(self, structure):
+        map_center = self.bot.game_info.map_center
+        position_towards_map_center = self.bot.start_location.towards(
+            map_center, distance=5)
+        placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
+                                                           placement_step=1)
 
-            # maybe dont sort gast fields
-            self.gas_fields = self.bot.vespene_geyser.closer_than(10, self.base.position) \
-                .sorted(lambda x: x.distance_to(self.base.position))
+        worker = self.get_worker_for_structure(placement_position)
 
-            self.max_mineral_workers = self.WORKERS_PER_MINERAL * \
-                len(self.mineral_fields)
-            self.max_gas_workers = self.WORKERS_PER_GAS * len(self.gas_fields)
-
-    def redistribute_workers(self):
-        self.split_workers_to_minerals_(self.mineral_worker_tags)
-
-    def get_next_mineral(self):
-        if self.mineral_fields:
-            for i, mineral in enumerate(self.mineral_fields):
-                if self.mineral_occupation[i] < self.WORKERS_PER_MINERAL:
-                    return i, mineral
-        return None, None  # not sure waht to do here
-
-    # Assigning workers to the closest mineral fields, max 2 workers per field
-    def split_workers_to_minerals_(self, workers):
-        worker_units = self.get_units_by_tag(workers)
-        for _ in range(len(worker_units)):
-            i, mineral = self.get_next_mineral()
-            closest_worker = worker_units.closest_to(mineral)
-            self.update_info(closest_worker, mineral.tag, 1)
-            worker_units.remove(closest_worker)
-            self.mineral_worker_tags.add(closest_worker.tag)
-            self.mineral_occupation[i] += 1
-
-    def split_workers_to_minerals(self, free_worker_tags):
-        # make this work when sending workers one by one todo!!!!!!!!!
-        free_worker_units = self.get_units_by_tag(free_worker_tags)
-        for mineral_field in self.mineral_fields:
-            # mineral_field = self.get_unit_by_tag(mineral_field.tag)
-            for i in range(self.WORKERS_PER_MINERAL - mineral_field.assigned_harvesters):
-                if len(free_worker_units) > 0:
-                    print("Assigning worker to mineral field")
-                    closest_worker = free_worker_units.closest_to(
-                        mineral_field)
-                    self.update_info(closest_worker, mineral_field.tag, 1)
-                    free_worker_units.remove(closest_worker)
-                    self.mineral_worker_tags.add(closest_worker.tag)
-                else:
-                    return None
-        return free_worker_units
+        if worker and placement_position:
+            removed = self.remove_worker_tag(worker.tag)
+            if removed:
+                worker.build(structure.item_ID, placement_position)
+                self.building_worker_tags.append(worker.tag)
+            return True
+        else:
+            # TODO: Handeling of this
+            print("No worker available for building, or there is no placement position")
+            return False
