@@ -92,9 +92,9 @@ class WorkerRushBot(BotAI):
             for w_manager in self.w_managers:
                 w_manager.update()
 
-            # next_item = self.build.get_next_item()
-            # if next_item and self.can_afford(next_item.unit_type):
-            #     self.produce(next_item)
+            next_item = self.build.get_next_item()
+            if next_item and self.can_afford(next_item.unit_type):
+                self.produce(next_item)
 
 
         if iteration % self.medium_iteration_speed == 0:
