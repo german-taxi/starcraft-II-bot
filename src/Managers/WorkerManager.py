@@ -126,29 +126,33 @@ class WorkerManager(Manager):
     def assign_worker(self, worker, target):
         worker.gather(target)
 
-    def build_structure(self, structure):
+    async def build_structure(self, structure):
         map_center = self.bot.game_info.map_center
         position_towards_map_center = self.bot.start_location.towards(map_center, distance=5)
-        placement_position = await self.bot.find_placement(UnitTypeId.SPAWNINGPOOL, near=position_towards_map_center,
+        placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
                                                            placement_step=1)
         
         worker = self.get_worker_for_structure(placement_position)
 
         if worker and placement_position:
-            worker.build(structure, placement_position)
-            # self
+           # have requirements for structure
+           #  if
+            worker.build(structure.item_ID, placement_position)
+
             self.building_workers.append(worker)
+            return True
         else:
             # TODO: Handeling of this
-            print("No worker available for building")
+            print("No worker available for building, or there is no placement position")
+            return False
 
     # Get closest Not MINING worker, If have cargo, return then build structure, can remake with closest_to
     def get_worker_for_structure(self, target):
-        distance_to_target = [target.distance_to(x) for x in
-                              self.mineral_worker_tags]  # only mineral workers for now, TODO: Gas workers
-        closest_worker = self.mineral_worker_tags[distance_to_target.index(
-            min(distance_to_target))]
-        # self.mineral_workers.closest_to(target)
+        # distance_to_target = [target.distance_to(x) for x in
+        #                       self.mineral_worker_tags]  # only mineral workers for now, TODO: Gas workers
+        # closest_worker = self.mineral_worker_tags[distance_to_target.index(
+        #     min(distance_to_target))]
+        closest_worker = self.get_units_by_tag(self.mineral_worker_tags).closest_to(target)
         return closest_worker
 
     def update_collectable_fields(self):

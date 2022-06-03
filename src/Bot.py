@@ -1,4 +1,4 @@
-from sc2 import maps
+from sc2 import maps, position
 from sc2.player import Bot, Computer
 from sc2.main import run_game
 from sc2.data import Race, Difficulty
@@ -11,7 +11,7 @@ from sc2.unit import Unit
 # from src.Manager import Manager
 # from src.ProductionQueue import ProductionQueue
 # from src.QueueItem import QueueItem
-from src.Build import Build
+from src.Build import Build, BuildItem
 from src.HeatMaps.DangerMap import DangerMap
 from src.HeatMaps.DefendedAreaMap import DefendedAreaMap
 from src.Managers.ArmyManager import ArmyManager
@@ -39,6 +39,7 @@ class WorkerRushBot(BotAI):
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
+      #  position.Point2.distance_to = lambda self, other: self.distance_to(other)
 
     def spend_resources(self):
         if self.can_afford(self.next_item.unit_type):
@@ -79,10 +80,35 @@ class WorkerRushBot(BotAI):
         self.w_managers.append(WorkerManager(self, self.townhalls[0]))
         self.a_managers.append(ArmyManager(self))
 
-
         self.danger_map = DangerMap(self, [640, 640])
         self.defended_area_map = DefendedAreaMap(self, [640, 640])
         self.build = Build(self)
+
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+
+        self.next_item = self.build.get_next_item()
         # self.time_to_travel = TimeToTravel(self)
 
     async def on_step(self, iteration: int):
@@ -92,29 +118,46 @@ class WorkerRushBot(BotAI):
             for w_manager in self.w_managers:
                 w_manager.update()
 
-            next_item = self.build.get_next_item()
-            if next_item and self.can_afford(next_item.unit_type):
-                self.produce(next_item)
-
+            if self.next_item:
+                if self.can_afford(self.next_item.item_ID):
+                    succeeded = await self.produce(self.next_item)
+                    if succeeded:
+                        self.next_item = self.build.get_next_item()
+            else:
+                print("No more items to build")
+                ## TODO: add more items to build
 
         if iteration % self.medium_iteration_speed == 0:
             pass
 
         if iteration % self.slow_iteration_speed == 0:
+           # await self._client.debug_create_unit([[UnitTypeId.MARINE, 5, self._game_info.map_center, 1]])
             pass
 
-    def produce(self, unit):
+    async def produce(self, unit):
         # find who can produce it
-        producer = None
+        producer = None  # maybe will use it later
+        succeeded = False
 
-        if unit.is_building():
-            self.w_managers[0].build_structure(unit)
-        #         if p.can
-        #     producer = self.townhalls.closest_to(unit.location)
-        # for cc in self.townhalls:
-        #     if cc.is_idle:  # no queue
-        #         cc.train(unit_type)
-        #         break
+        if unit.is_structure:
+            # doto: chose the best manager
+            succeeded = await self.w_managers[0].build_structure(unit)
+
+        if unit.item_ID == UnitTypeId.SCV:
+            for cc in self.townhalls:
+                if cc.is_idle:  # no queue
+                    cc.train(unit.item_ID)
+                    succeeded = True
+                    break
+
+        if unit.item_ID == UnitTypeId.MARINE:
+            # TODO: find barracks more easily
+            for barrack in self.units(UnitTypeId.BARRACKS):
+                if barrack.is_idle:
+                    barrack.train(unit.item_ID)
+                    succeeded = True
+                    break
+        return succeeded
 
 
 if __name__ == "__main__":
