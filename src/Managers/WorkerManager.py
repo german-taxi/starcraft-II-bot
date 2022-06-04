@@ -29,7 +29,7 @@ class WorkerManager(Manager):
         self.mineral_fields = []
         self.mineral_occupation = np.zeros(8)
         self.gas_fields = []
-        self.building_workers = []
+        self.building_worker_tags = set()
         # time_to_walk = mineral_fields.distance_to(self.base.position) / self.mineral_worker.move_speed
 
     def add_workers(self, workers_to_add, where_to_add=None):
@@ -101,6 +101,18 @@ class WorkerManager(Manager):
     def update(self):
         #print("update workers")
         self.fix_workers()
+        self.give_back_building_workers()
+
+    def give_back_building_workers(self):
+        workers_to_give_back = []
+        for worker_tag in self.building_worker_tags:
+            worker = self.get_unit_by_tag(worker_tag)
+            if worker.is_idle:
+                workers_to_give_back.append(worker_tag)
+                self.add_workers([worker])
+                #self.mineral_worker_tags.add(worker_tag)
+        for worker_tag in workers_to_give_back:
+            self.building_worker_tags.remove(worker_tag)
 
     def fix_workers(self):
         workers = self.get_units_by_tag(self.mineral_worker_tags)
@@ -139,7 +151,7 @@ class WorkerManager(Manager):
            #  if
             worker.build(structure.item_ID, placement_position)
 
-            self.building_workers.append(worker)
+            self.building_worker_tags.add(worker.tag)
             return True
         else:
             # TODO: Handeling of this
@@ -153,6 +165,7 @@ class WorkerManager(Manager):
         # closest_worker = self.mineral_worker_tags[distance_to_target.index(
         #     min(distance_to_target))]
         closest_worker = self.get_units_by_tag(self.mineral_worker_tags).closest_to(target)
+        self.mineral_worker_tags.remove(closest_worker.tag)
         return closest_worker
 
     def update_collectable_fields(self):
