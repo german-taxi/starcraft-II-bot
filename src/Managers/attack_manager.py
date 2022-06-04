@@ -15,17 +15,7 @@ class AttackManager(Manager):
         self.enemy_units: Units = None
         self.clear_map = None
 
-    async def micro_marine(self):
-        marines = self.units(UnitID.MARINE)
-        enemy_location = self.enemy_start_locations[0]
-
-        for marine in marines:
-            if (marine.weapon_cooldown == 0):
-                marine.attack(enemy_location)
-            elif marine.weapon_cooldown < 0:
-                marine.move()
-
-    def control_army_(self):
+    def control_army(self):
         army = self.units.filter(lambda unit: unit.type_id in {
                                  UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED})
         if not army:
@@ -36,16 +26,17 @@ class AttackManager(Manager):
             lambda unit: not unit.is_flying and unit.type_id not in {UnitID.LARVA, UnitID.EGG})
 
         if not ground_enemy_units:
-            self.army_no_vision_attack(army)
+            self.army_attack_no_vision(army)
             return
 
+        # o cia jau lupa
         enemy_fighters = ground_enemy_units.filter(lambda u: u.can_attack) + self.enemy_structures(
             {UnitID.BUNKER, UnitID.SPINECRAWLER, UnitID.PHOTONCANNON}
         )
 
-        self.army_set_attack(army, enemy_fighters, ground_enemy_units)
+        self.army_attack(army, enemy_fighters, ground_enemy_units)
 
-    def army_no_vision_attack(self, current_army):
+    def army_attack_no_vision(self, current_army):
         for unit in current_army:
             if self.enemy_structures:
                 structures_in_range = self.enemy_structures.in_attack_range_of(
@@ -67,7 +58,7 @@ class AttackManager(Manager):
             else:
                 unit.move(self.enemy_start_locations[0])
 
-    def army_set_attack(self, current_army, enemy_fighters, ground_enemy_units):
+    def army_attack(self, current_army, enemy_fighters, ground_enemy_units):
         for unit in current_army:
             if enemy_fighters:
                 in_range_enemies = enemy_fighters.in_attack_range_of(unit)
@@ -107,15 +98,55 @@ class AttackManager(Manager):
 
     # TODO: finish the function later
 
-    async def execute_attack(self):
+    def simple_micro(self):
         marines = self.units(UnitID.MARINE)
-        enemy_location = self.enemy_start_locations[0]
 
-        if marines.amount >= 14:
-            if self.enemy_units:
-                for marine in marines:
-                    if marine.weapon_ready:
-                        marine.attack(
-                            self.enemy_units.closest_to(marine.position))
-                    else:
-                        marine.move(self.units.closest_to(marine.position))
+        if self.enemy_units:
+            for marine in marines:
+                if marine.weapon_ready:
+                    marine.attack(
+                        self.enemy_units.closest_to(marine.position))
+                else:
+                    marine.move(self.enemy_structures.closest_to(marine))
+
+    def army_set_attack_enemy_base(self):
+        enemy_base_location = self.enemy_start_locations[0]
+        marines = self.units(UnitID.MARINE)
+
+        if marines >= 14:
+            for marine in marines:
+                if marine.weapon_ready:
+                    marine.attack(enemy_base_location)
+                else:
+                    marine.move(self.enemy_structures.closest_to(marine))
+
+    def army_set_attack_enemy_fighters(self):
+        marines = self.units(UnitID.MARINE)
+        enemy_fighters = self.enemy_units.filter(lambda u: u.can_attack) + self.enemy_units.filter(
+            lambda u: u.type_id in {UnitID.STALKER, UnitID.ZEALOT, UnitID.VOIDRAY, UnitID.DARKTEMPLAR, UnitID.COLOSSUS, UnitID.HIGHTEMPLAR})
+
+        if enemy_fighters:
+            for marine in marines:
+                if marine.weapon_ready:
+                    marine.attack(enemy_fighters.closest_to(marine))
+                else:
+                    marine.move(self.enemy_structures.closest_to(marine))
+                self.handle_low_health_units(enemy_fighters)
+                
+
+    def handle_low_health_units(self, enemy_units):
+        low_marines: self.units(UnitID.MARINE).filter(
+            lambda unit: unit.health_percentage < 0.4)
+        furthest_unit_from_enemy = self.units(UnitID.MARINE).furthest_to(
+            enemy_units.closest_to(self.start_location))
+        furthest_unit_from_enemy_base = self.units.furthest_to(
+            self.enemy_start_locations[0])
+
+        for marine in low_marines:
+            if marine.distance_to(furthest_unit_from_enemy) < 1:
+                marine.move(furthest_unit_from_enemy_base.position.towards(
+                    marine, 1 + furthest_unit_from_enemy_base.radius))
+            else:
+
+                marine.move(furthest_unit_from_enemy.position.towards(
+                    marine, 1 + furthest_unit_from_enemy.radius))
