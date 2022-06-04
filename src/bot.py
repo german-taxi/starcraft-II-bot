@@ -26,7 +26,6 @@ map_name = "AcropolisLE"
 class WorkerRushBot(BotAI):
     def __init__(self):
         super().__init__()
-        self.unit_by_tag = {}
         self.next_item = None
         self.w_managers = []
         self.a_managers = []

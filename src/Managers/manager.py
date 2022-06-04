@@ -1,4 +1,8 @@
-class Manager:
+import sc2
+
+from bot import WorkerRushBot
+
+class Manager(WorkerRushBot):
     def __init__(self):
         self.units = []
 
@@ -17,3 +21,11 @@ class Manager:
         new_manager = Manager()
         self.transfer_units(units_to_split, new_manager)
         return new_manager
+
+    async def execute_build_order(self):
+        if (self.minerals < 25):
+            return
+            
+        # To be continued...
+        
+        
