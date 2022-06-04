@@ -4,6 +4,7 @@ from sc2.main import run_game
 from sc2.data import Race, Difficulty
 from sc2.bot_ai import BotAI
 from sc2.ids.unit_typeid import UnitTypeId
+from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
 import sys
 
 from sc2.unit import Unit
@@ -83,7 +84,7 @@ class WorkerRushBot(BotAI):
         self.danger_map = DangerMap(self, [640, 640])
         self.defended_area_map = DefendedAreaMap(self, [640, 640])
         self.build = Build(self)
-
+        # adding buildings to the build queue
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
@@ -96,6 +97,7 @@ class WorkerRushBot(BotAI):
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
@@ -122,6 +124,7 @@ class WorkerRushBot(BotAI):
                 if self.can_afford(self.next_item.item_ID):
                     succeeded = await self.produce(self.next_item)
                     if succeeded:
+                        print("Producing: " + str(self.next_item.item_ID))
                         self.next_item = self.build.get_next_item()
             else:
                 print("No more items to build")
@@ -135,28 +138,21 @@ class WorkerRushBot(BotAI):
             pass
 
     async def produce(self, unit):
-        # find who can produce it
-        producer = None  # maybe will use it later
         succeeded = False
+        train_structure_types = UNIT_TRAINED_FROM[unit.item_ID]
+        print("train_structure_type: " + str(train_structure_types))
 
         if unit.is_structure:
-            # doto: chose the best manager
+            # TODO: chose the best manager
             succeeded = await self.w_managers[0].build_structure(unit)
 
-        if unit.item_ID == UnitTypeId.SCV:
-            for cc in self.townhalls:
-                if cc.is_idle:  # no queue
-                    cc.train(unit.item_ID)
+        for train_structure_type in train_structure_types:
+            for structure in self.structures(train_structure_type):
+                if structure.is_idle:
+                    structure.train(unit.item_ID)
                     succeeded = True
                     break
 
-        if unit.item_ID == UnitTypeId.MARINE:
-            # TODO: find barracks more easily
-            for barrack in self.units(UnitTypeId.BARRACKS):
-                if barrack.is_idle:
-                    barrack.train(unit.item_ID)
-                    succeeded = True
-                    break
         return succeeded
 
 
