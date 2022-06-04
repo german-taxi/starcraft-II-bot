@@ -12,6 +12,8 @@ from sc2.unit import Unit
 # from src.Manager import Manager
 # from src.ProductionQueue import ProductionQueue
 # from src.QueueItem import QueueItem
+from sc2.units import Units
+
 from src.Build import Build, BuildItem
 from src.HeatMaps.DangerMap import DangerMap
 from src.HeatMaps.DefendedAreaMap import DefendedAreaMap
@@ -40,6 +42,7 @@ class WorkerRushBot(BotAI):
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
+        #self.expansion_locations_list
       #  position.Point2.distance_to = lambda self, other: self.distance_to(other)
 
     def spend_resources(self):
@@ -63,17 +66,19 @@ class WorkerRushBot(BotAI):
         if unit.type_id == UnitTypeId.SCV:
             for w_manager in self.w_managers:
                 if w_manager.base.distance_to(unit) < 10:
-                    w_manager.add_workers([unit])
+                    #w_manager.add_workers([unit])
+                    w_manager.add_worker_tag(unit.tag)
                     break
 
     async def on_unit_destroyed(self, unit_tag: int):
         found = False
-        for w_manager in self.w_managers:
-            found = w_manager.remove_worker(unit_tag)
-            if found:
-                break
-        if not found:
-            print("Unit not found")
+
+        # for w_manager in self.w_managers:
+        #     found = w_manager.remove_worker(unit_tag)
+        #     if found:
+        #         break
+        # if not found:
+        #     print("Unit not found")
             # search in other managers
 
     async def on_start(self):
@@ -140,7 +145,7 @@ class WorkerRushBot(BotAI):
     async def produce(self, unit):
         succeeded = False
         train_structure_types = UNIT_TRAINED_FROM[unit.item_ID]
-        print("train_structure_type: " + str(train_structure_types))
+        # print("train_structure_type: " + str(train_structure_types))  # Debug
 
         if unit.is_structure:
             # TODO: chose the best manager
@@ -154,6 +159,21 @@ class WorkerRushBot(BotAI):
                     break
 
         return succeeded
+
+    def get_unit_by_tag(self, tag):
+        unit = self.unit_by_tag.get(tag)
+        if unit is None:
+            print("unit not found")
+            return None
+        return unit
+
+    def get_units_by_tag(self, tags):
+        units = Units([], self)
+        for tag in tags:
+            unit = self.get_unit_by_tag(tag)
+            if unit is not None:
+                units.append(unit)
+        return units
 
 
 if __name__ == "__main__":
