@@ -3,7 +3,7 @@ from sc2 import position
 from sc2.ids.unit_typeid import UnitTypeId
 
 
-class ScoutingManager():
+class ScoutingManager:
     def __init__(self, bot):
         #super().__init__()
         self.bot = bot
