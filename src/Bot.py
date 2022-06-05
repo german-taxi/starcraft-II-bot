@@ -20,6 +20,7 @@ from src.HeatMaps.DefendedAreaMap import DefendedAreaMap
 from src.Managers.ArmyManager import ArmyManager
 from src.Managers.WorkerManager import WorkerManager
 from src.Helper.TimeToTravel import TimeToTravel
+from src.Managers.scouting_manager import ScoutingManager
 
 print(sys.version)
 
@@ -42,6 +43,7 @@ class WorkerRushBot(BotAI):
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
+        self.s_managers = []
         #self.expansion_locations_list
       #  position.Point2.distance_to = lambda self, other: self.distance_to(other)
 
@@ -86,8 +88,11 @@ class WorkerRushBot(BotAI):
         self.w_managers.append(WorkerManager(self, self.townhalls[0]))
         self.a_managers.append(ArmyManager(self))
 
+        self.s_managers.append(ScoutingManager(self))
+
         self.danger_map = DangerMap(self, [640, 640])
         self.defended_area_map = DefendedAreaMap(self, [640, 640])
+
         self.build = Build(self)
         # adding buildings to the build queue
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
@@ -135,6 +140,9 @@ class WorkerRushBot(BotAI):
                 print("No more items to build")
                 ## TODO: add more items to build
 
+            for s_manager in self.s_managers:
+                await s_manager.scout()
+
         if iteration % self.medium_iteration_speed == 0:
             pass
 
@@ -174,6 +182,8 @@ class WorkerRushBot(BotAI):
             if unit is not None:
                 units.append(unit)
         return units
+    # def on_building_construction_complete(self, unit: Unit):
+    #     pass
 
 
 if __name__ == "__main__":
