@@ -18,6 +18,7 @@
 </a>
 
 ![](/assets/readme_objects/project_title.svg)
+
 <h3 align="center" id="project-title">starcraft-II-bot</h3>
 
 <p align="center" >
