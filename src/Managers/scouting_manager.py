@@ -1,11 +1,10 @@
-from curses.panel import bottom_panel
-import numpy as np
 import random
 from sc2 import position
-from sc2.ids.ability_id import AbilityId
-from sc2.units import Units
 from sc2.ids.unit_typeid import UnitTypeId
+
 from Managers.manager import Manager
+# from src.Managers.manager import Manager
+
 
 class ScoutingManager(Manager):
     def __init__(self, bot):
@@ -18,23 +17,24 @@ class ScoutingManager(Manager):
             if scout.is_idle:
                 enemy_location = self.bot.enemy_start_locations[0]
                 move_to = self.random_location_variance(enemy_location)
-                self.bot.do(scout.move(move_to))
+                scout.move(move_to)
+                print("Scout commanded to move to: " + str(move_to))
 
     def random_location_variance(self, enemy_start_location):
         x = enemy_start_location[0]
         y = enemy_start_location[1]
 
-        x += ((random.randrange(-20,20))/100) * enemy_start_location[0]
-        y += ((random.randrange(-20,20))/100) * enemy_start_location[1] 
+        x += ((random.randrange(-20, 20))/100) * enemy_start_location[0]
+        y += ((random.randrange(-20, 20))/100) * enemy_start_location[1]
 
         if x < 0:
             x = 0
         if y < 0:
-            y = 0  
+            y = 0
         if x > self.bot.game_info.map_size[0]:
             x = self.bot.game_info.map_size[0]
         if y > self.bot.game_info.map_size[1]:
-            y = self.bot.game_info.map_size[1]   
+            y = self.bot.game_info.map_size[1]
 
-        go_to = position.Point2(position.Pointlike((x,y)))
-        return go_to  
+        go_to = position.Point2(position.Pointlike((x, y)))
+        return go_to
