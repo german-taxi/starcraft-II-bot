@@ -1,5 +1,7 @@
 <!-- PROJECT SHIELDS -->
+
 # starcraft-II-bot
+
 [![Contributors][contributors-shield]][contributors-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
@@ -7,6 +9,7 @@
 ---
 
 <!-- ABOUT THE PROJECT -->
+
 ## Installation
 
 1. Use the package manager [pip](https://pip.pypa.io/en/stable/) to install [poetry](https://python-poetry.org/) dependency manager.
@@ -29,7 +32,7 @@ Simply run the command:
 python3 src/bot.py
 ```
 
-## WSL config 
+## WSL config
 
 Add the following environment variables:
 
@@ -46,6 +49,7 @@ Po to dar apiforminta labiau bus
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
 [contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
 [contributors-url]: https://github.com/german-taxi/starcraft-II-bot/graphs/contributors
 [issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
