@@ -26,7 +26,7 @@ poetry install
 Simply run the command:
 
 ```bash
-python3 src/Bot.py
+python3 src/bot.py
 ```
 
 ## WSL config 

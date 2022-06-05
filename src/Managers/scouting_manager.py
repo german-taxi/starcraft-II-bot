@@ -2,10 +2,12 @@ import random
 from sc2 import position
 from sc2.ids.unit_typeid import UnitTypeId
 
+from src.Managers.manager import Manager
 
-class ScoutingManager:
+
+class ScoutingManager(Manager):
     def __init__(self, bot):
-        #super().__init__()
+        super().__init__()
         self.bot = bot
 
     async def scout(self):
@@ -14,14 +16,15 @@ class ScoutingManager:
             if scout.is_idle:
                 enemy_location = self.bot.enemy_start_locations[0]
                 move_to = self.random_location_variance(enemy_location)
-                self.bot.do(scout.move(move_to))
+                scout.move(move_to)
+                print("Scout commanded to move to: " + str(move_to))
 
     def random_location_variance(self, enemy_start_location):
         x = enemy_start_location[0]
         y = enemy_start_location[1]
 
-        x += ((random.randrange(-20,20))/100) * enemy_start_location[0]
-        y += ((random.randrange(-20,20))/100) * enemy_start_location[1]
+        x += ((random.randrange(-20, 20))/100) * enemy_start_location[0]
+        y += ((random.randrange(-20, 20))/100) * enemy_start_location[1]
 
         if x < 0:
             x = 0
