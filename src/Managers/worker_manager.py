@@ -55,7 +55,7 @@ class GasField(MineralField):
                     # print("Send worker to gather, reason wrong target/idle")  # Debug
 
 
-#  TODO: micro mules,  Base relocation, Repair ?
+#  TODO: 1. micro_mules,  2. base_relocation, repair?
 class WorkerManager:
     def __init__(self, bot, base_tag=None):
         self.WORKERS_PER_GAS = 3
@@ -163,7 +163,7 @@ class WorkerManager:
                     else:
                         break
         # if len(self.free_worker_tags) != 0:   # Debug
-        #     print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
+        # print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
 
     def fix_free_workers(self):
         if self.get_empty_space() == 0:
@@ -220,7 +220,7 @@ class WorkerManager:
             placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
                                                                placement_step=1)
 
-        # TODO: Handle the case of placement_position being defined, but there is no postion available
+        # TODO: Handle the case of placement_position being defined, but there being no position available
         if placement_position:
             worker = self.get_worker_for_structure(placement_position)
             if worker:

@@ -9,10 +9,6 @@
 <br />
 <div align="center">
 
-  <!-- <a href="https://github.com/github_username/repo_name">
-    <img src="assets/images/german-taxi-logo.jpg" alt="Logo" width="160" height="160" id='german-taxi-logo' >
-  </a> -->
-
 <a href="https://github.com/german-taxi/starcraft-II-bot">
     <img src="assets/images/german-taxi-gif-logo.gif" alt="animated-logo" height="160" width="160" id="german-taxi-animated-logo" >
 </a>
@@ -29,7 +25,17 @@
 
 <!-- ABOUT THE PROJECT -->
 
-## Installation
+# **Installation**
+
+## **- Manual install**
+
+---
+
+***tuoj pridesiu***
+
+---
+
+## **- Using poetry**
 
 1. Use the package manager [pip](https://pip.pypa.io/en/stable/) to install [poetry](https://python-poetry.org/) dependency manager.
 
@@ -61,10 +67,6 @@ SC2SERVERHOST=0.0.0.0
 ```
 
 You can find your IPv4 Address by typing `ipconfig /all' and searching for the field 'IPv4 Address'
-
-## Comments
-
-Po to dar apiforminta labiau bus
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->

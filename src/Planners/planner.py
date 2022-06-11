@@ -10,9 +10,10 @@ class Planer():
 
 
 class Plan():
+    # TODO: Double check whether average_collection_rate_per_s calculations is correct
     def __init__(self, bot):
         self.current_time = 0
-        self.average_collection_rate_per_s = 40 / 60  # not sure if this is correct
+        self.average_collection_rate_per_s = 40 / 60
         self.bot = bot
         self.mineral_guess = None
         self.time = np.array([0])
@@ -51,14 +52,14 @@ class Plan():
         self.time = np.append(self.time, t)
         self.mineral_collection_rate = np.append(
             self.mineral_collection_rate, m)
-        #self.mineral_guess = interp1d(self.time, self.mineral_collection_rate, 'linear')
+        # self.mineral_guess = interp1d(self.time, self.mineral_collection_rate, 'linear')
 
     def update_minerals_collected(self, time):
         x = np.array([50])
         y = np.array([0])
-        for i in range(1, int(time)+1):  # +1, so we can -1 later, and always have valid index
+        for i in range(1, int(time)+1):
             x = np.append(x, x[i-1] + self.get_mineral_rate(i))
-            y = np.append(y, i)  # can be made faster
+            y = np.append(y, i)
         self.mineral_guess = interp1d(x, y, 'linear')
 
     def build_base(self):
