@@ -17,5 +17,6 @@ class DefendedAreaMap:
     def add_defended_zone(self, unit_position, radius):
         pass
 
-    def get_radius(self, unit):
+    @staticmethod
+    def get_radius(unit):
         return 0
