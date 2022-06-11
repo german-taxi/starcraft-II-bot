@@ -215,12 +215,7 @@ class WorkerManager:
             placement_position = await self.bot.get_next_expansion()
         else:
             map_center = self.bot.game_info.map_center
-<<<<<<< HEAD
-            position_towards_map_center = self.bot.start_location.towards(
-                map_center, distance=11)
-=======
             position_towards_map_center = self.bot.start_location.towards(map_center, distance=11)
->>>>>>> ebb6619ccb78c115b98964d9bafa5fc2f247fc65
             placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
                                                                placement_step=1)
 
