@@ -1,7 +1,7 @@
 import numpy as np
 from sc2.ids.ability_id import AbilityId
 from sc2.units import Units
-from Managers.manager import Manager
+from src.Managers.manager import Manager
 
 
 class ArmyManager(Manager):
@@ -17,4 +17,3 @@ class ArmyManager(Manager):
 
     def perform_actions(self, unit):
         pass
-

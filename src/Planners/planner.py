@@ -18,7 +18,7 @@ class Plan():
         self.time = np.array([0])
         self.mineral_collection_rate = np.array([0])
         self.mining_workers = sum(
-            [w_manager.mineral_worker_tags.amount for w_manager in self.bot.w_managers])
+            [w_manager.worker_tags.amount for w_manager in self.bot.w_managers])
         self.working_until = [0 for _ in range(self.bot.townhalls.amount)]
         self.empty_worker_space_total = sum(
             [self.empty_worker_space(w_manager) for w_manager in self.bot.w_managers])
@@ -35,7 +35,7 @@ class Plan():
                     self.current_time + 11, self.mining_workers * self.average_collection_rate_per_s)
 
     def empty_worker_space(self, w_manager):
-        return w_manager.max_mineral_workers - w_manager.mineral_worker_tags.amount
+        return w_manager.max_mineral_workers - w_manager.worker_tags.amount
 
     def get_mineral_rate(self, time):
         index_before = 0
