@@ -11,5 +11,10 @@ class DangerMap:
     def add_danger_zone(self):
         pass
 
+<<<<<<< HEAD
     def get_radius(self):
+=======
+    @staticmethod
+    def get_radius(unit):
+>>>>>>> 0895e930b7488498855a235a65f73985fa1c066e
         return 0
