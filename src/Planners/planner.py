@@ -34,7 +34,7 @@ class Plan():
                 self.update_mineral_rate(
                     self.current_time + 11, self.mining_workers * self.average_collection_rate_per_s)
 
-    def empty_worker_space(self, w_manager):
+    def empty_worker_space(w_manager):
         return w_manager.max_mineral_workers - w_manager.worker_tags.amount
 
     def get_mineral_rate(self, time):

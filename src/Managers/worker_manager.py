@@ -211,14 +211,16 @@ class WorkerManager:
     async def build_structure(self, structure):
         if structure.item_ID == UnitTypeId.REFINERY:
             return await self.build_gas_building(structure)
-        elif structure.item_ID == UnitTypeId.COMMANDCENTER:
+        if structure.item_ID == UnitTypeId.COMMANDCENTER:
             placement_position = await self.bot.get_next_expansion()
         else:
             map_center = self.bot.game_info.map_center
-            position_towards_map_center = self.bot.start_location.towards(map_center, distance=11)
+            position_towards_map_center = self.bot.start_location.towards(
+                map_center, distance=11)
             placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
                                                                placement_step=1)
 
+        # TODO: Handle the case of placement_position being defined, but there is no postion available
         if placement_position:
             worker = self.get_worker_for_structure(placement_position)
             if worker:
@@ -226,7 +228,6 @@ class WorkerManager:
                 self.building_worker_tags.append(worker.tag)
                 return True
             return False
-        else:
-            # TODO: Handeling of this
-            print("There is no placement position")
-            return False
+
+        print("There is no placement position")
+        return False
