@@ -1,5 +1,6 @@
 from sc2.units import Units
-from src.Managers.manager import Manager
+# from src.Managers.manager import Manager
+from Managers.manager import Manager
 
 
 class ArmyManager(Manager):

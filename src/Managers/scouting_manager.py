@@ -2,7 +2,8 @@ import random
 from sc2 import position
 from sc2.ids.unit_typeid import UnitTypeId
 
-from src.Managers.manager import Manager
+# from src.Managers.manager import Manager
+from Managers.manager import Manager
 
 
 class ScoutingManager(Manager):
