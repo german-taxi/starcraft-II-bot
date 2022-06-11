@@ -1,0 +1,14 @@
+version: "3.1"
+
+services:
+    sc2_bot:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8069:8069"
+        environment:
+            - DISPLAY=${DISPLAY}
+        volumes:
+            - /tmp/.X11-unix:/tmp/.X11-unix
+        network_mode: host
