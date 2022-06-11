@@ -55,7 +55,7 @@ class GasField(MineralField):
                     # print("Send worker to gather, reason wrong target/idle")  # Debug
 
 
-#  TODO: micro mules,  Base relocation, Repair ?
+#  TODO: 1. micro_mules,  2. base_relocation, repair?
 class WorkerManager:
     def __init__(self, bot, base_tag=None):
         self.WORKERS_PER_GAS = 3
@@ -163,7 +163,7 @@ class WorkerManager:
                     else:
                         break
         # if len(self.free_worker_tags) != 0:   # Debug
-        #     print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
+        # print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
 
     def fix_free_workers(self):
         if self.get_empty_space() == 0:
@@ -211,14 +211,16 @@ class WorkerManager:
     async def build_structure(self, structure):
         if structure.item_ID == UnitTypeId.REFINERY:
             return await self.build_gas_building(structure)
-        elif structure.item_ID == UnitTypeId.COMMANDCENTER:
+        if structure.item_ID == UnitTypeId.COMMANDCENTER:
             placement_position = await self.bot.get_next_expansion()
         else:
             map_center = self.bot.game_info.map_center
-            position_towards_map_center = self.bot.start_location.towards(map_center, distance=11)
+            position_towards_map_center = self.bot.start_location.towards(
+                map_center, distance=11)
             placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
                                                                placement_step=1)
 
+        # TODO: Handle the case of placement_position being defined, but there being no position available
         if placement_position:
             worker = self.get_worker_for_structure(placement_position)
             if worker:
@@ -226,7 +228,6 @@ class WorkerManager:
                 self.building_worker_tags.append(worker.tag)
                 return True
             return False
-        else:
-            # TODO: Handeling of this
-            print("There is no placement position")
-            return False
+
+        print("There is no placement position")
+        return False

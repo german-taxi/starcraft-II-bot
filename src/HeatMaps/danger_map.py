@@ -1,9 +1,3 @@
-import numpy as np
-from sc2.ids.ability_id import AbilityId
-
-from sc2.units import Units
-
-
 class DangerMap:
     def __init__(self, bot, map_size):
         self.bot = bot
@@ -14,8 +8,8 @@ class DangerMap:
             if unit.is_enemy:
                 self.add_danger_zone(unit.position, self.get_radius(unit))
 
-    def add_danger_zone(self, unit_position, radius):
+    def add_danger_zone(self):
         pass
 
-    def get_radius(self, unit):
+    def get_radius(self):
         return 0

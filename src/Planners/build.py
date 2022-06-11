@@ -12,8 +12,7 @@ class Build:
     def get_next_item(self):
         if len(self.build_list) > 0:
             return self.build_list.pop(0)
-        else:
-            return None
+        return None
 
 
 class BuildItem:
