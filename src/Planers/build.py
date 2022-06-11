@@ -17,8 +17,8 @@ class Build:
 
 
 class BuildItem:
-    def __init__(self, item_ID, is_structure=False):
-        self.item_ID = item_ID
+    def __init__(self, item_id, is_structure=False):
+        self.item_ID = item_id
         self.is_structure = is_structure
         self.time_to_start = 0
 
