@@ -10,7 +10,7 @@ from sc2.unit import Unit
 from sc2.units import Units
 from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
 
-from src.Planers.build import Build, BuildItem
+from src.Planners.build import Build, BuildItem
 from src.Managers.army_manager import ArmyManager
 from src.Managers.worker_manager import WorkerManager
 from src.Managers.scouting_manager import ScoutingManager
