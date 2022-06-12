@@ -2,16 +2,20 @@ import random
 from sc2 import position
 from sc2.ids.unit_typeid import UnitTypeId
 
-# from src.Managers.manager import Manager
 from Managers.manager import Manager
+# from src.Managers.manager import Manager
 
 
+# It's a class that manages the scouting system
 class ScoutingManager(Manager):
     def __init__(self, bot):
         super().__init__()
         self.bot = bot
 
     async def scout(self):
+        """
+        If there are any SCVs, send the first one to a random location near the enemy base
+        """
         if len(self.bot.units(UnitTypeId.SCV)) > 0:
             scout = self.bot.units(UnitTypeId.SCV)[0]
             if scout.is_idle:
@@ -21,6 +25,16 @@ class ScoutingManager(Manager):
                 print("Scout commanded to move to: " + str(move_to))
 
     def random_location_variance(self, enemy_start_location):
+        """
+        It takes the enemy start location, adds a random number between -20 and 20 to the x and y
+        coordinates, then divides that number by 100 and multiplies it by the enemy start location
+
+        Args:
+          enemy_start_location: This is the location of the enemy base.
+
+        Returns:
+          The go_to variable is being returned.
+        """
         x = enemy_start_location[0]
         y = enemy_start_location[1]
 

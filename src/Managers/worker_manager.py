@@ -1,6 +1,7 @@
 from sc2.ids.unit_typeid import UnitTypeId
 
 
+# > A class that represents a mineral field.
 class MineralField:
     def __init__(self, bot, tag):
         self.bot = bot
@@ -9,6 +10,10 @@ class MineralField:
         self.occupation = 0
 
     def update(self):
+        """
+        If the worker is idle or gathering, and it's not already gathering from this mineral patch, send it
+        to gather from this mineral patch
+        """
         workers = self.bot.get_units_by_tag(self.worker_tags)
 
         for worker in workers:
@@ -19,10 +24,26 @@ class MineralField:
                     # print("Send worker to gather, reason wrong target/idle")  # Debug
 
     def add_worker(self, worker_tag):
+        """
+        > The function `add_worker` takes in a worker tag and adds it to the set of worker tags
+
+        Args:
+          worker_tag: the tag of the worker that is being added to the job
+        """
         self.worker_tags.add(worker_tag)
         self.occupation += 1
 
     def remove_worker(self, worker_tag):
+        """
+        It removes a worker from the queue, and returns True if the worker was in the queue, and False
+        otherwise
+
+        Args:
+          worker_tag: The tag of the worker that is being removed.
+
+        Returns:
+          A boolean value.
+        """
         if worker_tag in self.worker_tags:
             self.worker_tags.discard(worker_tag)
             self.occupation -= 1
@@ -30,21 +51,38 @@ class MineralField:
         return False
 
     def get_random_worker_tag(self):
+        """
+        If there are worker tags available, return one and decrement the occupation count
+
+        Returns:
+          A random worker tag is being returned.
+        """
         if self.worker_tags:
             self.occupation -= 1
             return self.worker_tags.pop()
         return None
 
 
+# > A GasField is a MineralField that has a gas_type attribute
 class GasField(MineralField):
     def __init__(self, bot, tag):
         super().__init__(bot, tag)
         self.building_tag = None
 
     def set_gas_building(self, building_tag):
+        """
+        `set_gas_building` sets the building tag for the gas building
+
+        Args:
+          building_tag: The building tag of the building you want to set the gas for.
+        """
         self.building_tag = building_tag
 
     def update(self):
+        """
+        If the worker is idle or gathering, and it's not already gathering from the correct building, send
+        it to gather from the correct building
+        """
         workers = self.bot.get_units_by_tag(self.worker_tags)
 
         for worker in workers:
@@ -56,6 +94,7 @@ class GasField(MineralField):
 
 
 #  TODO: 1. micro_mules,  2. base_relocation, repair?
+# It manages workers
 class WorkerManager:
     def __init__(self, bot, base_tag=None):
         self.WORKERS_PER_GAS = 3
@@ -70,6 +109,9 @@ class WorkerManager:
         self.create_collectable_fields()
 
     def update(self):
+        """
+        The function updates the mineral fields and gas fields
+        """
         self.fix_idle_buildings_worker()
         self.fix_free_workers()
 
@@ -80,6 +122,12 @@ class WorkerManager:
             gas_field.update()
 
     def create_collectable_fields(self, position=None):
+        """
+        It creates a list of mineral fields and gas fields that are close to the base
+
+        Args:
+          position: The position of the base.
+        """
         if position is None:
             position = self.bot.get_unit_by_tag(self.base_tag).position
 
@@ -100,12 +148,33 @@ class WorkerManager:
                     MineralField(self.bot, mineral_field.tag))
 
     def set_base_tag(self, base_tag):
+        """
+        This function sets the base tag of the object to the base tag passed in as an argument
+
+        Args:
+          base_tag: The base tag for the image.
+        """
         self.base_tag = base_tag
 
     def add_worker_tag(self, worker_tag):
+        """
+        It adds a worker tag to the list of free worker tags.
+
+        Args:
+          worker_tag: A string that identifies the worker.
+        """
         self.free_worker_tags.append(worker_tag)
 
     def remove_worker_tag(self, worker_tag):
+        """
+        If a worker is assigned to a mineral field, remove the worker from the mineral field
+
+        Args:
+          worker_tag: The tag of the worker to remove.
+
+        Returns:
+          A boolean value.
+        """
         removed = False
         for mineral_field in self.mineral_fields:
             removed = mineral_field.remove_worker(worker_tag)
@@ -114,6 +183,10 @@ class WorkerManager:
         return removed
 
     def fix_idle_buildings_worker(self):
+        """
+        If a worker is idle, remove it from the list of building workers and add it to the list of free
+        workers
+        """
         tags_to_remove = []
 
         building_workers = self.bot.get_units_by_tag(self.building_worker_tags)
@@ -126,6 +199,10 @@ class WorkerManager:
             self.free_worker_tags.append(tag)
 
     def free_workers_to_mineral(self):
+        """
+        For each free worker, find the first mineral field that has less than 3 workers and assign the
+        worker to it
+        """
         tags_to_remove = []
         for free_worker_tag in self.free_worker_tags:
             for mineral_field in self.mineral_fields:
@@ -139,6 +216,10 @@ class WorkerManager:
             self.free_worker_tags.remove(tag)
 
     def free_workers_to_gas(self):
+        """
+        If there are free workers and gas fields that need workers, assign the free workers to the gas
+        fields
+        """
         tags_to_remove = []
         for free_worker_tag in self.free_worker_tags:
             for gas_field in self.gas_fields:
@@ -154,6 +235,10 @@ class WorkerManager:
             self.free_worker_tags.remove(tag)
 
     def transfer_workers(self):
+        """
+        If there are free workers in the current worker manager, then transfer them to the other worker
+        managers until there are no more free workers
+        """
         for w_manager in self.bot.w_managers:
             if self != w_manager:
                 empty_space = w_manager.get_empty_space()
@@ -166,6 +251,12 @@ class WorkerManager:
         # print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
 
     def fix_free_workers(self):
+        """
+        If there is no empty space, transfer workers. Otherwise, send workers to gas or minerals
+
+        Returns:
+          The number of workers that are not assigned to a mineral patch or a gas refinery.
+        """
         if self.get_empty_space() == 0:
             self.transfer_workers()
             return
@@ -173,6 +264,12 @@ class WorkerManager:
         self.free_workers_to_mineral()
 
     def get_empty_space(self):
+        """
+        It returns the number of workers that can be assigned to a mineral or gas field
+
+        Returns:
+          The number of workers that can be assigned to a mineral or gas field.
+        """
         space = 0
         for mineral_field in self.mineral_fields:
             space += self.WORKERS_PER_MINERAL - mineral_field.occupation
@@ -182,6 +279,16 @@ class WorkerManager:
         return space
 
     def get_worker_for_structure(self, target):
+        """
+        It returns a random worker from the mineral fields, and if there are no workers in the mineral
+        fields, it returns a random worker from the gas fields
+
+        Args:
+          target: The target structure that we want to get a worker for.
+
+        Returns:
+          A worker unit.
+        """
         for mineral in reversed(self.mineral_fields):
             random_worker_tag = mineral.get_random_worker_tag()
             if random_worker_tag is not None:
@@ -193,6 +300,15 @@ class WorkerManager:
         return None
 
     async def build_gas_building(self, structure):
+        """
+        If there is a gas field that is not being built on, find a worker to build on it
+
+        Args:
+          structure: The structure you want to build.
+
+        Returns:
+          True or False
+        """
         for gas_field in self.gas_fields:
             if gas_field.building_tag is None:
                 placement_unit = self.bot.get_unit_by_tag(gas_field.tag)
@@ -209,6 +325,16 @@ class WorkerManager:
         return False
 
     async def build_structure(self, structure):
+        """
+        If the structure is a refinery, build it at the gas geyser. If it's a command center, build it
+        at the next expansion. Otherwise, build it 11 units away from the map center
+
+        Args:
+          structure: The structure to build
+
+        Returns:
+          A boolean value
+        """
         if structure.item_ID == UnitTypeId.REFINERY:
             return await self.build_gas_building(structure)
         if structure.item_ID == UnitTypeId.COMMANDCENTER:
