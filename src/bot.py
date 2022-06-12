@@ -1,3 +1,4 @@
+# It's a bot that builds a bunch of stuff.
 import sys
 from sc2 import maps
 from sc2.player import Bot, Computer
@@ -18,9 +19,12 @@ from Managers.scouting_manager import ScoutingManager
 # from src.Managers.worker_manager import WorkerManager
 # from src.Managers.scouting_manager import ScoutingManager
 
-print(sys.version)
 
 map_name = "AcropolisLE"
+print(sys.version)
+
+# This class is the main class that contains all the functions that are used to control the bot, that can
+# play the game of Starcraft 2.
 
 
 class MacroBot(BotAI):
@@ -43,6 +47,15 @@ class MacroBot(BotAI):
         self.attack_managers = []
 
     def get_unit_by_tag(self, tag):
+        """
+        It returns the unit object associated with the tag
+
+        Args:
+          tag: The tag of the unit you want to get.
+
+        Returns:
+          The unit is being returned.
+        """
         unit = self.unit_by_tag.get(tag)
         if unit is None:
             # print("unit not found")  # Debug
@@ -50,6 +63,15 @@ class MacroBot(BotAI):
         return unit
 
     def get_units_by_tag(self, tags):
+        """
+        Get a list of units by their tags
+
+        Args:
+          tags: A list of tags to search for.
+
+        Returns:
+          A list of units that match the tags.
+        """
         units = Units([], self)
         for tag in tags:
             unit = self.get_unit_by_tag(tag)
@@ -58,6 +80,13 @@ class MacroBot(BotAI):
         return units
 
     async def on_unit_created(self, unit: Unit):
+        """
+        If the unit is an SCV, then it will find the closest worker manager and add the SCV to that worker
+        manager
+
+        Args:
+          unit (Unit): The unit that was created.
+        """
         self.unit_by_tag[unit.tag] = unit
 
         if unit.type_id == UnitTypeId.SCV:
@@ -72,6 +101,13 @@ class MacroBot(BotAI):
             self.attack_managers[0].add_army_tag(unit)
 
     async def on_building_construction_complete(self, unit: Unit):
+        """
+        When a refinery is built, it checks if there is a worker waiting for it, and if so, it tags the
+        refinery to the worker.
+
+        Args:
+          unit (Unit): Unit
+        """
         print("Building complete: " + str(unit.type_id))
         if unit.type_id == UnitTypeId.REFINERY:
             for waiting_for_structure in self.waiting_for_structures:
@@ -84,6 +120,14 @@ class MacroBot(BotAI):
                 print("Refinery not found")
 
     async def on_building_construction_started(self, unit: Unit):
+        """
+        If a command center is built, it will check if there is a worker manager that has no base tag. If
+        there is, it will set the base tag to the command center's tag. If there isn't, it will create a new
+        worker manager and set the base tag to the command center's tag.
+
+        Args:
+          unit (Unit): Unit
+        """
         self.unit_by_tag[unit.tag] = unit
 
         if unit.type_id == UnitTypeId.COMMANDCENTER:
@@ -97,6 +141,16 @@ class MacroBot(BotAI):
                 self.w_managers.append(WorkerManager(self, unit.tag))
 
     async def on_unit_destroyed(self, unit_tag: int):
+        """
+        "If a worker is destroyed, remove it from the worker manager."
+
+        The function is called when a worker is destroyed. It loops through all the worker managers and
+        calls the remove_worker function. If the worker is found, it is removed from the worker manager.
+        If the worker is not found, it prints "Unit not found"
+
+        Args:
+          unit_tag (int): The tag of the unit that was destroyed.
+        """
         pass
 
         # found = False
@@ -109,6 +163,10 @@ class MacroBot(BotAI):
         # search in other managers
 
     async def on_start(self):
+        """
+        The function is called when the game starts. It creates a dictionary of all the units in the game
+        and assigns them a tag. It also creates a worker manager, an army manager, and a scouting manager
+        """
         # why doesn't work with all_my_units?
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         self.w_managers.append(WorkerManager(self, self.townhalls[0].tag))
@@ -120,6 +178,7 @@ class MacroBot(BotAI):
         # 2. self.defended_area_map = DefendedAreaMap(self, [640, 640])
         # 3. self.time_to_travel = TimeToTravel(self)
 
+        # Creating a build order for the bot to follow.
         self.build = Build(self)
 
         # Crazy build bro
@@ -156,8 +215,8 @@ class MacroBot(BotAI):
         self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
         self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
 
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))#
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))#
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
 
         # Tech lab on Barracks
         self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
@@ -175,10 +234,19 @@ class MacroBot(BotAI):
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
 
+        # Getting the next item in the build.
         self.next_item = self.build.get_next_item()
 
     # TODO: add more items to build
     async def on_step(self, iteration: int):
+        """
+        The on_step function is called every iteration of the game. The iteration variable is the number of
+        iterations that have passed since the game started. The iteration variable is used to determine how
+        often certain functions are called
+
+        Args:
+          iteration (int): int
+        """
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         # if iteration == 0:
         #     await self._client.debug_create_unit([[UnitTypeId.MARINE, 5, self._game_info.map_center, 1]])
@@ -211,6 +279,17 @@ class MacroBot(BotAI):
             pass
 
     async def produce(self, unit):
+        """
+        If the unit is a structure, then check if the tech requirement is met, and if so, build the
+        structure. If the unit is not a structure, then check if there is an idle structure that can
+        train the unit, and if so, train the unit
+
+        Args:
+          unit: The unit to be produced.
+
+        Returns:
+          The return value is a boolean value.
+        """
         succeeded = False
 
         # print("train_structure_type: " + str(train_structure_types))  # Debug
@@ -232,6 +311,7 @@ class MacroBot(BotAI):
         return succeeded
 
 
+# Running the game with the map and the bot.
 if __name__ == "__main__":
     run_game(maps.get(map_name), [
         Bot(Race.Terran, MacroBot()),
