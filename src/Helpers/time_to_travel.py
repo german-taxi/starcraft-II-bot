@@ -1,3 +1,5 @@
+# The class TimeToTravel is a blueprint for creating objects that represent the time it takes to
+# travel from one location to another.
 class TimeToTravel:
     def __init__(self):
         pass
