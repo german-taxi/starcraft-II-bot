@@ -330,4 +330,4 @@ if __name__ == "__main__":
     run_game(maps.get(map_name), [
         Bot(Race.Terran, MacroBot()),
         Computer(Race.Protoss, Difficulty.Easy, ai_build=AIBuild.Macro)
-    ], realtime=True)
+    ], realtime=False)

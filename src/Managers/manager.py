@@ -1,7 +1,7 @@
-# The Manager class has a list of units.
+# Base class for all managers
 class Manager:
     def __init__(self):
-        self.units = []
+        self.__units = []
 
     def add_unit(self, unit):
         """
@@ -10,7 +10,7 @@ class Manager:
         Args:
           unit: The unit to add to the list.
         """
-        self.units.append(unit)
+        self.__units.append(unit)
 
     def remove_unit(self, unit):
         """
@@ -19,7 +19,7 @@ class Manager:
         Args:
           unit: The unit to remove from the list.
         """
-        self.units.remove(unit)
+        self.__units.remove(unit)
 
     def transfer_units(self, unit_list, target_manager):
         """

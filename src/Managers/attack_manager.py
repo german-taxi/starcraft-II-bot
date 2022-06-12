@@ -8,11 +8,11 @@ from src.Managers.manager import Manager
 class AttackManager(Manager):
     def __init__(self, bot):
         super().__init__()
-        self.bot = bot
+        self.__bot = bot
         self.army_count: int = 0
         self.clear_map = None
-        self.army_tags = set()
-        self.army_units: Units = None
+        self.__army_tags = set()
+        self.__army_units: Units = None
         self.attack = False
 
     def add_army_tags(self, units):
@@ -32,7 +32,7 @@ class AttackManager(Manager):
         Args:
           tag: The unit that we want to add to the army.
         """
-        self.army_tags.add(tag)
+        self.__army_tags.add(tag)
         # later :self.bot.calculate_supply_cost(unit.type_id)
         self.army_count += 1
         print("Added army tag: ", tag)
@@ -47,8 +47,8 @@ class AttackManager(Manager):
         Returns:
           A boolean value.
         """
-        if tag in self.army_tags:
-            self.army_tags.discard(tag)
+        if tag in self.__army_tags:
+            self.__army_tags.discard(tag)
             self.army_count -= 1
             return True
         return False
@@ -58,13 +58,13 @@ class AttackManager(Manager):
         The update function is called every frame, and it updates the army_units list with the current units
         in the army, and if the army is large enough, it sets the attack variable to True
         """
-        self.army_units = self.bot.get_units_by_tag(self.army_tags)
+        self.__army_units = self.__bot.get_units_by_tag(self.__army_tags)
         if self.army_count > 20:
             self.attack = True
         if self.attack:
-            self.control_army()
+            self.__control_army()
 
-    def control_army(self):
+    def __control_army(self):
         """
         If there are no enemy units in sight, the army will move to the closest enemy structure. If there
         are enemy units in sight, the army will attack the closest enemy unit
@@ -74,26 +74,26 @@ class AttackManager(Manager):
         """
         # army = self.army_units.filter(lambda unit: unit.type_id in {
         #                          UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED, UnitID.HELLION})
-        army = self.army_units
+        army = self.__army_units
         if not army:
             return
 
         # prasivaiksto publika bsk, jei nieko nemato
-        ground_enemy_units = self.bot.enemy_units.filter(
+        ground_enemy_units = self.__bot.enemy_units.filter(
             lambda unit: not unit.is_flying and unit.type_id not in {UnitID.LARVA, UnitID.EGG})  # and not unit.is_structure
 
         if not ground_enemy_units:
-            self.army_attack_no_vision(army)
+            self.__army_attack_no_vision(army)
             return
 
         # o cia jau lupa
-        enemy_fighters = ground_enemy_units.filter(lambda u: u.can_attack) + self.bot.enemy_structures(
+        enemy_fighters = ground_enemy_units.filter(lambda u: u.can_attack) + self.__bot.enemy_structures(
             {UnitID.BUNKER, UnitID.SPINECRAWLER, UnitID.PHOTONCANNON}
         )
         # print("enemy fighters: ", len(enemy_fighters))
-        self.army_attack(army, enemy_fighters, ground_enemy_units)
+        self.__army_attack(army, enemy_fighters, ground_enemy_units)
 
-    def army_attack_no_vision(self, current_army):
+    def __army_attack_no_vision(self, current_army):
         """
         If there are enemy structures, attack the one with the lowest health, otherwise move towards the
         enemy base
@@ -102,8 +102,8 @@ class AttackManager(Manager):
           current_army: The army that is currently being controlled.
         """
         for unit in current_army:
-            if self.bot.enemy_structures:
-                structures_in_range = self.bot.enemy_structures.in_attack_range_of(
+            if self.__bot.enemy_structures:
+                structures_in_range = self.__bot.enemy_structures.in_attack_range_of(
                     unit)
                 if structures_in_range:
                     lowest_hp = min(structures_in_range, key=lambda s: (
@@ -118,11 +118,11 @@ class AttackManager(Manager):
                             unit.move(lowest_hp.position)
 
                 else:
-                    unit.move(self.bot.enemy_structures.closest_to(unit))
+                    unit.move(self.__bot.enemy_structures.closest_to(unit))
             else:
-                unit.move(self.bot.enemy_start_locations[0])
+                unit.move(self.__bot.enemy_start_locations[0])
 
-    def army_attack(self, current_army, enemy_fighters, ground_enemy_units):
+    def __army_attack(self, current_army, enemy_fighters, ground_enemy_units):
         """
         If there are enemy fighters in range, attack the one with the lowest health. If there are no
         enemy fighters in range, attack the closest enemy unit
@@ -170,12 +170,12 @@ class AttackManager(Manager):
 
     # TODO: finish the function later
 
-    def simple_micro(self):
+    def __simple_micro(self):
         """
         If there are enemy units, then for each marine, if the marine's weapon is ready, then attack the
         closest enemy unit, otherwise move to the closest enemy structure
         """
-        marines = self.units(UnitID.MARINE)
+        marines = self.__units(UnitID.MARINE)
 
         if self.enemy_units:
             for marine in marines:
@@ -183,27 +183,27 @@ class AttackManager(Manager):
                     marine.attack(
                         self.enemy_units.closest_to(marine.position))
                 else:
-                    marine.move(self.bot.enemy_structures.closest_to(marine))
+                    marine.move(self.__bot.enemy_structures.closest_to(marine))
 
-    def army_set_attack_enemy_base(self):
+    def __army_set_attack_enemy_base(self):
         """
         If we have at least 14 marines, attack the enemy base
         """
-        enemy_base_location = self.bot.enemy_start_locations[0]
-        marines = self.units(UnitID.MARINE)
+        enemy_base_location = self.__bot.enemy_start_locations[0]
+        marines = self.__units(UnitID.MARINE)
 
         if marines >= 14:
             for marine in marines:
                 if marine.weapon_ready:
                     marine.attack(enemy_base_location)
                 else:
-                    marine.move(self.bot.enemy_structures.closest_to(marine))
+                    marine.move(self.__bot.enemy_structures.closest_to(marine))
 
-    def army_set_attack_enemy_fighters(self):
+    def __army_set_attack_enemy_fighters(self):
         """
         If there are enemy units that can attack, attack them. If not, attack the enemy structures
         """
-        marines = self.units(UnitID.MARINE)
+        marines = self.__units(UnitID.MARINE)
         enemy_fighters = self.enemy_units.filter(lambda u: u.can_attack) + self.enemy_units.filter(
             lambda u: u.type_id in {UnitID.STALKER, UnitID.ZEALOT, UnitID.VOIDRAY, UnitID.DARKTEMPLAR, UnitID.COLOSSUS, UnitID.HIGHTEMPLAR})
 
@@ -212,22 +212,22 @@ class AttackManager(Manager):
                 if marine.weapon_ready:
                     marine.attack(enemy_fighters.closest_to(marine))
                 else:
-                    marine.move(self.bot.enemy_structures.closest_to(marine))
+                    marine.move(self.__bot.enemy_structures.closest_to(marine))
                 self.handle_low_health_units(enemy_fighters)
 
-    def handle_low_health_units(self, enemy_units):
+    def __handle_low_health_units(self, enemy_units):
         """
         If a marine is low on health, move it away from the enemy
 
         Args:
           enemy_units: The enemy units that are in range of the marines.
         """
-        low_marines = self.army_units(UnitID.MARINE).filter(
+        low_marines = self.__army_units(UnitID.MARINE).filter(
             lambda unit: unit.health_percentage < 0.4)
-        furthest_unit_from_enemy = self.units(UnitID.MARINE).furthest_to(
-            enemy_units.closest_to(self.bot.start_location))
-        furthest_unit_from_enemy_base = self.units.furthest_to(
-            self.bot.enemy_start_locations[0])
+        furthest_unit_from_enemy = self.__units(UnitID.MARINE).furthest_to(
+            enemy_units.closest_to(self.__bot.start_location))
+        furthest_unit_from_enemy_base = self.__units.furthest_to(
+            self.__bot.enemy_start_locations[0])
 
         for marine in low_marines:
             if marine.distance_to(furthest_unit_from_enemy) < 1:
