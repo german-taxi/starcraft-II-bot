@@ -98,7 +98,7 @@ class MacroBot(BotAI):
                 print("Didn't find close worker manager")
 
         if unit.type_id in [UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED, UnitID.HELLION]:
-            self.attack_managers[0].add_army_tag(unit)
+            self.attack_managers[0].add_army_tag(unit.tag)
 
     async def on_building_construction_complete(self, unit: Unit):
         """
@@ -151,16 +151,30 @@ class MacroBot(BotAI):
         Args:
           unit_tag (int): The tag of the unit that was destroyed.
         """
-        pass
-
-        # found = False
-        # for w_manager in self.w_managers:
-        #     found = w_manager.remove_worker(unit_tag)
-        #     if found:
-        #         break
-        # if not found:
-        #     print("Unit not found")
-        # search in other managers
+        removed = False
+        for w_manager in self.w_managers:
+            removed = w_manager.remove_mineral_field(unit_tag)
+            if removed:
+                break
+        if not removed:
+            for w_manager in self.w_managers:
+                removed = w_manager.remove_worker_tag(unit_tag)
+                if removed:
+                    break
+        if not removed:
+            for w_manager in self.w_managers:
+                if w_manager.base_tag == unit_tag:
+                    w_manager.base_tag = None
+                    removed = True
+                    print("Base removed")
+                    break
+        if not removed:
+            for attack_manager in self.attack_managers:
+                removed = attack_manager.remove_army_tag(unit_tag)
+                if removed:
+                    break
+        if not removed:
+            pass
 
     async def on_start(self):
         """
@@ -316,4 +330,4 @@ if __name__ == "__main__":
     run_game(maps.get(map_name), [
         Bot(Race.Terran, MacroBot()),
         Computer(Race.Protoss, Difficulty.Easy, ai_build=AIBuild.Macro)
-    ], realtime=False)
+    ], realtime=True)

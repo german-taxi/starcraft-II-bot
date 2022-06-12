@@ -23,19 +23,19 @@ class AttackManager(Manager):
           units: A list of units to add the tag to.
         """
         for unit in units:
-            self.add_army_tag(unit)
+            self.add_army_tag(unit.tag)
 
-    def add_army_tag(self, unit):
+    def add_army_tag(self, tag):
         """
         The function adds the unit's tag to the army_tags set, and then increments the army_count by 1
 
         Args:
-          unit: The unit that we want to add to the army.
+          tag: The unit that we want to add to the army.
         """
-        self.army_tags.add(unit.tag)
+        self.army_tags.add(tag)
         # later :self.bot.calculate_supply_cost(unit.type_id)
         self.army_count += 1
-        print("Added army tag: ", unit.tag)
+        print("Added army tag: ", tag)
 
     def remove_army_tag(self, tag):
         """

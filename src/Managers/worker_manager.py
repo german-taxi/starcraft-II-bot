@@ -108,6 +108,19 @@ class WorkerManager:
         self.building_worker_tags = []
         self.create_collectable_fields()
 
+    def remove_mineral_field(self, mineral_field_tag):
+        """
+        It removes a mineral field from the list of mineral fields.
+        """
+        for mineral_field in self.mineral_fields:
+            if mineral_field.tag == mineral_field_tag:
+                for _ in range(mineral_field.occupation):
+                    self.free_worker_tags.append(mineral_field.get_random_worker_tag())
+                #mineral_field.
+                self.mineral_fields.remove(mineral_field)
+                return True
+        return False
+
     def update(self):
         """
         The function updates the mineral fields and gas fields
@@ -247,8 +260,13 @@ class WorkerManager:
                         w_manager.add_worker_tag(self.free_worker_tags.pop())
                     else:
                         break
-        # if len(self.free_worker_tags) != 0:   # Debug
-        # print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
+        if len(self.free_worker_tags) != 0:
+            print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
+            print("Sending jobless to war!")   # Debug
+            for worker_tag in self.free_worker_tags:
+                self.bot.attack_managers[0].add_army_tag(worker_tag)
+                self.free_worker_tags.remove(worker_tag)
+
 
     def fix_free_workers(self):
         """
