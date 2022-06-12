@@ -2,14 +2,15 @@ import sys
 from sc2 import maps
 from sc2.player import Bot, Computer
 from sc2.main import run_game
-from sc2.data import Race, Difficulty
+from sc2.data import Race, Difficulty, AIBuild
 from sc2.bot_ai import BotAI
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
+from sc2.ids.unit_typeid import UnitTypeId as UnitID
 from sc2.units import Units
 from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
 from Planners.build import Build, BuildItem
-from Managers.army_manager import ArmyManager
+from Managers.attack_manager import AttackManager
 from Managers.worker_manager import WorkerManager
 from Managers.scouting_manager import ScoutingManager
 # from src.Planners.build import Build, BuildItem
@@ -39,6 +40,7 @@ class MacroBot(BotAI):
         self.slow_iteration_speed = 15
         self.s_managers = []
         self.waiting_for_structures = []
+        self.attack_managers = []
 
     def get_unit_by_tag(self, tag):
         unit = self.unit_by_tag.get(tag)
@@ -65,6 +67,9 @@ class MacroBot(BotAI):
                     break
             else:
                 print("Didn't find close worker manager")
+
+        if unit.type_id in [UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED, UnitID.HELLION]:
+            self.attack_managers[0].add_army_tag(unit)
 
     async def on_building_construction_complete(self, unit: Unit):
         print("Building complete: " + str(unit.type_id))
@@ -107,7 +112,7 @@ class MacroBot(BotAI):
         # why doesn't work with all_my_units?
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         self.w_managers.append(WorkerManager(self, self.townhalls[0].tag))
-        self.a_managers.append(ArmyManager(self))
+        self.attack_managers.append(AttackManager(self))
         self.s_managers.append(ScoutingManager(self))
 
         # TODO: Future features:
@@ -151,6 +156,9 @@ class MacroBot(BotAI):
         self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
         self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
 
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))#
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))#
+
         # Tech lab on Barracks
         self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
@@ -167,18 +175,13 @@ class MacroBot(BotAI):
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
 
-        # self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        # self.build.add_item(BuildItem(UnitTypeId.FACTORY, True))
-        # self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
-        # self.build.add_item(BuildItem(UnitTypeId.STARPORT, True))
-        # self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
-        # self.build.add_item(BuildItem(UnitTypeId.MEDIVAC, False))
-
         self.next_item = self.build.get_next_item()
 
     # TODO: add more items to build
     async def on_step(self, iteration: int):
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
+        # if iteration == 0:
+        #     await self._client.debug_create_unit([[UnitTypeId.MARINE, 5, self._game_info.map_center, 1]])
 
         if iteration % self.fast_iteration_speed == 0:
             for w_manager in self.w_managers:
@@ -198,6 +201,9 @@ class MacroBot(BotAI):
             for s_manager in self.s_managers:
                 await s_manager.scout()
 
+            for attack_manager in self.attack_managers:
+                attack_manager.update()
+
         if iteration % self.medium_iteration_speed == 0:
             pass
 
@@ -206,7 +212,7 @@ class MacroBot(BotAI):
 
     async def produce(self, unit):
         succeeded = False
-        train_structure_types = UNIT_TRAINED_FROM[unit.item_ID]
+
         # print("train_structure_type: " + str(train_structure_types))  # Debug
 
         if unit.is_structure:
@@ -215,9 +221,10 @@ class MacroBot(BotAI):
                 succeeded = await self.w_managers[0].build_structure(unit)
             return succeeded
 
+        train_structure_types = UNIT_TRAINED_FROM[unit.item_ID]
         for train_structure_type in train_structure_types:
             for structure in self.structures(train_structure_type):
-                if structure.is_idle:
+                if structure.is_idle and structure.is_ready:
                     structure.train(unit.item_ID)
                     succeeded = True
                     break
@@ -228,5 +235,5 @@ class MacroBot(BotAI):
 if __name__ == "__main__":
     run_game(maps.get(map_name), [
         Bot(Race.Terran, MacroBot()),
-        Computer(Race.Protoss, Difficulty.Medium)
-    ], realtime=True)
+        Computer(Race.Protoss, Difficulty.Easy, ai_build=AIBuild.Macro)
+    ], realtime=False)
