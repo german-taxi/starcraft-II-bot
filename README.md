@@ -45,6 +45,7 @@
     </li>
     <li><a href="#running">Running the bot</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#docker">Docker</a></li>
     <li><a href="#wsl">WSL</a></li>
     <!-- <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -151,6 +152,15 @@ python3 src/bot.py
 
 **TODO:**
 _Add the roadmap i.e. future updates & features_
+
+<br/>
+
+## **Docker**
+---
+To containerize the german-taxi bot, simply run:
+ ```sh
+docker-compose up -d
+```
 
 <br/>
 
