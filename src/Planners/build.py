@@ -13,6 +13,15 @@ class Build:
         """
         self.build_list.append(item)
 
+    def add_to_start(self, item):
+        """
+        The function takes in an item and adds it to the start of the build_list
+
+        Args:
+          item: The item to be added to the list.
+        """
+        self.build_list.insert(0, item)
+
     def set_build(self, build):
         """
         It sets the build list to the build list that is passed in.
@@ -33,6 +42,16 @@ class Build:
             return self.build_list.pop(0)
         return None
 
+    def first_item(self):
+        """
+        If there are items in the build list, return the first item in the list. Otherwise, return None
+
+        Returns:
+          The first item in the list is being returned.
+        """
+        if len(self.build_list) > 0:
+            return self.build_list[0]
+        return None
 
 # The BuildItem class is a class that represents an item that is being built. It has three attributes:
 # item_ID, is_structure, and time_to_start

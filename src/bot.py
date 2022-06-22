@@ -1,5 +1,7 @@
 # It's a bot that builds economy, army and fights the opponent.
 import sys
+
+import numpy as np
 from sc2 import maps
 from sc2.player import Bot, Computer
 from sc2.main import run_game
@@ -44,6 +46,8 @@ class MacroBot(BotAI):
         self.scouting_managers = []
         self.waiting_for_structures = []
         self.attack_managers = []
+        self.build_workers = True
+        self.build_depot = True
 
     def get_unit_by_tag(self, tag):
         """
@@ -107,6 +111,52 @@ class MacroBot(BotAI):
                 print("No attack_manager found, adding new one")
                 self.attack_managers.append(AttackManager(self))
                 self.attack_managers[-1].add_army_tag(unit.tag)
+
+    def should_build_workers(self):
+        """
+        It checks if the bot should build workers.
+        """
+        free_worker_space = 0
+        for worker_manager in self.worker_managers:
+            free_worker_space += worker_manager.get_empty_space()
+        if free_worker_space > 0:
+            return True
+        return False
+
+    def should_build_depot(self):
+        """
+        It checks if the bot should build a depot.
+        """
+        supply_already_building = 0
+
+        for unit in self.structures.filter(lambda unit: unit.type_id in {
+            UnitID.SUPPLYDEPOT, UnitID.COMMANDCENTER}):
+            if not unit.is_ready:   # under construction
+                if unit.type_id == UnitID.SUPPLYDEPOT:
+                    supply_already_building += 8
+                elif unit.build_progress > 0.65:
+                    supply_already_building += 10
+
+        for unit in self.placeholders.filter(lambda unit: unit.type_id in {
+            UnitID.SUPPLYDEPOT, UnitID.COMMANDCENTER}):
+            if not unit.is_ready:   # worker on the way to build it
+                if unit.type_id == UnitID.SUPPLYDEPOT:
+                    supply_already_building += 8
+
+        # TODO: compare with value based on speed supply is used and projected supply losses
+        if self.supply_left + supply_already_building < max(self.supply_cap * 0.13, 4):
+            if self.supply_cap + supply_already_building >= 200:
+                return False
+            return True
+        return False
+
+    def recalculate_state(self):
+        """
+        It recalculates the state of the bot,
+        and updates global variables.
+        """
+        self.build_workers = self.should_build_workers()
+        self.build_depot = self.should_build_depot()
 
     async def on_unit_created(self, unit: Unit):
         """
@@ -225,85 +275,62 @@ class MacroBot(BotAI):
         # Creating a build order for the bot to follow.
         self.build = Build(self)
 
-        # Crazy build bro
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-
-        # Orbital command
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
-
-
-
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
-        self.build.add_item(BuildItem(UnitTypeId.FACTORY, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
-
-        # Reactor on Barracks
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.STARPORT, True))
-
-        # Orbital command
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
-        self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
-
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-
-        # Tech lab on Barracks
-        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
-        self.build.add_item(BuildItem(UnitTypeId.HELLION, False))
-
-        # Stim pack on Barracks
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-        self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
+        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
+        self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
+        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
 
-        # Getting the next item in the build.
-        self.next_item = self.build.get_next_item()
+    async def update_build(self):
+        """
+        The function is called every frame. it manages all things related to the build order.
+        """
+        item_to_build = self.build.first_item()
+        if self.build_workers and self.can_afford(UnitID.SCV):
+            succeeded = await self.produce(BuildItem(UnitTypeId.SCV, False))
+        if self.build_depot and item_to_build and item_to_build.item_ID != UnitTypeId.SUPPLYDEPOT:
+            self.build.add_to_start(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
+            print("Added supply depot to start")
+            self.build_depot = False
 
-    # TODO: add more items to build
+        succeeded = await self.produce(BuildItem(UnitTypeId.REAPER, False))
+
+        if item_to_build:
+            if self.can_afford(item_to_build.item_ID):
+                succeeded = await self.produce(item_to_build)
+                if succeeded:
+                    print("Producing: " + str(item_to_build.item_ID))
+                    self.build.get_next_item()
+        else:
+            self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+            self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
+
+    def update_worker_managers(self):
+        """
+        The function is called every frame. It updates all the worker managers.
+        """
+        for worker_manager in self.worker_managers:
+            worker_manager.update()
+
+    def update_attack_managers(self):
+        for attack_manager in self.attack_managers:
+            if attack_manager.army_count > 10:
+                attack_manager.update(True)
+            attack_manager.update()
+
+    async def update_scouting_managers(self):
+        for s_manager in self.scouting_managers:
+            await s_manager.scout()
 
     async def on_step(self, iteration: int):
         """
@@ -315,32 +342,18 @@ class MacroBot(BotAI):
           iteration (int): int
         """
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
+        # for item in self.build.build_list:
+        #     print(item.item_ID)
         # if iteration == 0:
         #     await self._client.debug_create_unit([[UnitTypeId.REAPER, 5, self._game_info.map_center, 1]])
         #     self.attack_managers[0].update(True)
 
         if iteration % self.fast_iteration_speed == 0:
-            for worker_manager in self.worker_managers:
-                worker_manager.update()
-
-            if self.next_item:
-                if self.can_afford(self.next_item.item_ID):
-                    succeeded = await self.produce(self.next_item)
-                    if succeeded:
-                        print("Producing: " + str(self.next_item.item_ID))
-                        self.next_item = self.build.get_next_item()
-            else:
-                self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-                self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
-                self.next_item = self.build.get_next_item()
-
-            for s_manager in self.scouting_managers:
-                await s_manager.scout()
-
-            for attack_manager in self.attack_managers:
-                if attack_manager.army_count > 10:
-                    attack_manager.update(True)
-                attack_manager.update()
+            self.recalculate_state()
+            self.update_worker_managers()
+            await self.update_build()
+            await self.update_scouting_managers()
+            self.update_attack_managers()
 
         if iteration % self.medium_iteration_speed == 0:
             pass

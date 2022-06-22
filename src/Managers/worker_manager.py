@@ -276,12 +276,13 @@ class WorkerManager(Manager):
                         w_manager.add_worker_tag(self.free_worker_tags.pop())
                     else:
                         break
-        if len(self.free_worker_tags) != 0:
-            print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
-            print("Sending jobless to war!")   # Debug
-            for worker_tag in self.free_worker_tags:
-                self.bot.attack_managers[0].add_army_tag(worker_tag)
-                self.free_worker_tags.remove(worker_tag)
+        #if len(self.free_worker_tags) != 0:
+            #print("Not all workers were redistributed! Left: ", len(self.free_worker_tags))   # Debug
+            # print("Sending jobless to war!")   # Debug
+
+            # for worker_tag in self.free_worker_tags:
+            #     self.bot.attack_managers[0].add_army_tag(worker_tag)
+            #     self.free_worker_tags.remove(worker_tag)
 
     def __fix_free_workers(self):
         """
