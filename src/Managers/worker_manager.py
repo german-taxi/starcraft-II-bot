@@ -268,7 +268,7 @@ class WorkerManager(Manager):
         If there are free workers in the current worker manager, then transfer them to the other worker
         managers until there are no more free workers
         """
-        for w_manager in self.bot.w_managers:
+        for w_manager in self.bot.worker_managers:
             if self != w_manager:
                 empty_space = w_manager.get_empty_space()
                 for i in range(empty_space):

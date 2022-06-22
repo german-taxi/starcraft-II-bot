@@ -6,14 +6,17 @@ from src.Managers.manager import Manager
 
 # > This class is used to manage the attack of the bot
 class AttackManager(Manager):
-    def __init__(self, bot):
+    def __init__(self, bot, attacking=False):
         super().__init__()
         self.__bot = bot
         self.army_count: int = 0
         self.clear_map = None
         self.__army_tags = set()
         self.__army_units: Units = None
-        self.attack = False
+        self.__attacking = attacking
+
+    def is_fighting(self):
+        return self.__attacking
 
     def add_army_tags(self, units):
         """
@@ -53,16 +56,56 @@ class AttackManager(Manager):
             return True
         return False
 
-    def update(self):
+    def update(self, attack=None):
         """
         The update function is called every frame, and it updates the army_units list with the current units
         in the army, and if the army is large enough, it sets the attack variable to True
         """
+        if attack is not None:
+            self.__attacking = attack
         self.__army_units = self.__bot.get_units_by_tag(self.__army_tags)
-        if self.army_count > 20:
-            self.attack = True
-        if self.attack:
+
+        if self.__attacking:
+            self.__remove_low_hp_units()
             self.__control_army()
+        else:
+            self.__remove_high_hp_units()
+            self.__keep_away_from_enemy()
+
+    def __keep_away_from_enemy(self):
+        """
+        If there are enemy units in sight, the army will move away from them
+        """
+        if not self.__army_units:
+            return
+
+        ground_enemy_units = self.__bot.enemy_units.filter(
+            lambda unit: not unit.is_flying and unit.type_id not in {UnitID.LARVA, UnitID.EGG})
+
+        enemy_fighters = ground_enemy_units.filter(lambda u: u.can_attack) + self.__bot.enemy_structures(
+            {UnitID.BUNKER, UnitID.SPINECRAWLER, UnitID.PHOTONCANNON})
+
+        for unit in self.__army_units:
+            if enemy_fighters.closer_than(10, unit):
+                unit.move(unit.position.towards(
+                    enemy_fighters.closest_to(unit), -5))
+
+    def __remove_low_hp_units(self):
+        for unit in self.__army_units:
+            if unit.type_id == UnitID.REAPER:
+                if unit.health < unit.health_max*0.4:
+                    self.__army_units.remove(unit)
+                    self.__army_tags.remove(unit.tag)
+                    self.army_count -= 1
+                    self.__bot.relocate_army_unit(unit)
+
+    def __remove_high_hp_units(self):
+        for unit in self.__army_units:
+            if unit.health > unit.health_max*0.8:
+                self.__army_units.remove(unit)
+                self.__army_tags.remove(unit.tag)
+                self.army_count -= 1
+                self.__bot.relocate_army_unit(unit)
 
     def __control_army(self):
         """
@@ -74,8 +117,7 @@ class AttackManager(Manager):
         """
         # army = self.army_units.filter(lambda unit: unit.type_id in {
         #                          UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED, UnitID.HELLION})
-        army = self.__army_units
-        if not army:
+        if not self.__army_units:
             return
 
         # prasivaiksto publika bsk, jei nieko nemato
@@ -83,7 +125,7 @@ class AttackManager(Manager):
             lambda unit: not unit.is_flying and unit.type_id not in {UnitID.LARVA, UnitID.EGG})  # and not unit.is_structure
 
         if not ground_enemy_units:
-            self.__army_attack_no_vision(army)
+            self.__army_attack_no_vision(self.__army_units)
             return
 
         # o cia jau lupa
@@ -91,7 +133,7 @@ class AttackManager(Manager):
             {UnitID.BUNKER, UnitID.SPINECRAWLER, UnitID.PHOTONCANNON}
         )
         # print("enemy fighters: ", len(enemy_fighters))
-        self.__army_attack(army, enemy_fighters, ground_enemy_units)
+        self.__army_attack(self.__army_units, enemy_fighters, ground_enemy_units)
 
     def __army_attack_no_vision(self, current_army):
         """
@@ -116,7 +158,6 @@ class AttackManager(Manager):
                                 unit, 1 + lowest_hp.radius))
                         else:
                             unit.move(lowest_hp.position)
-
                 else:
                     unit.move(self.__bot.enemy_structures.closest_to(unit))
             else:

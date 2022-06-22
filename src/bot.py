@@ -1,4 +1,4 @@
-# It's a bot that builds a bunch of stuff.
+# It's a bot that builds economy, army and fights the opponent.
 import sys
 from sc2 import maps
 from sc2.player import Bot, Computer
@@ -32,8 +32,7 @@ class MacroBot(BotAI):
         super().__init__()
         self.unit_by_tag = {}
         self.next_item = None
-        self.w_managers = []
-        self.a_managers = []
+        self.worker_managers = []
         self.unit_by_tag = {}
         self.danger_map = None
         self.defended_area_map = None
@@ -42,7 +41,7 @@ class MacroBot(BotAI):
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
-        self.s_managers = []
+        self.scouting_managers = []
         self.waiting_for_structures = []
         self.attack_managers = []
 
@@ -79,6 +78,36 @@ class MacroBot(BotAI):
                 units.append(unit)
         return units
 
+    def relocate_army_unit(self, unit: Unit):
+        """
+        Adds unit to correct manager(to get away from combat or go fight).
+
+        Args:
+          unit (Unit): Unit
+        """
+        # adding unit to non attacking manager
+        if unit.health < unit.health_max * 0.5:
+            for attack_manager in self.attack_managers:
+                if not attack_manager.is_fighting():
+                    attack_manager.add_army_tag(unit.tag)
+                    print("Added to army manager")
+                    break
+            else:
+                print("No attack_manager found, adding new one")
+                self.attack_managers.append(AttackManager(self))
+                self.attack_managers[-1].add_army_tag(unit.tag)
+        # adding unit to attacking manager
+        else:
+            for attack_manager in self.attack_managers:
+                if attack_manager.is_fighting():
+                    attack_manager.add_army_tag(unit.tag)
+                    print("Added to army manager")
+                    break
+            else:
+                print("No attack_manager found, adding new one")
+                self.attack_managers.append(AttackManager(self))
+                self.attack_managers[-1].add_army_tag(unit.tag)
+
     async def on_unit_created(self, unit: Unit):
         """
         If the unit is an SCV, then it will find the closest worker manager and add the SCV to that worker
@@ -90,7 +119,7 @@ class MacroBot(BotAI):
         self.unit_by_tag[unit.tag] = unit
 
         if unit.type_id == UnitTypeId.SCV:
-            for w_manager in self.w_managers:
+            for w_manager in self.worker_managers:
                 if self.get_unit_by_tag(w_manager.base_tag).position.is_closer_than(10, unit):
                     w_manager.add_worker_tag(unit.tag)
                     break
@@ -131,14 +160,14 @@ class MacroBot(BotAI):
         self.unit_by_tag[unit.tag] = unit
 
         if unit.type_id == UnitTypeId.COMMANDCENTER:
-            for w_manager in self.w_managers:
+            for w_manager in self.worker_managers:
                 if w_manager.base_tag is None:
                     w_manager.set_base_tag(unit.tag)
                     print("Base tagged, on empty manager")
                     break
             else:
                 print("No w_manager found, adding new one")
-                self.w_managers.append(WorkerManager(self, unit.tag))
+                self.worker_managers.append(WorkerManager(self, unit.tag))
 
     async def on_unit_destroyed(self, unit_tag: int):
         """
@@ -152,17 +181,17 @@ class MacroBot(BotAI):
           unit_tag (int): The tag of the unit that was destroyed.
         """
         removed = False
-        for w_manager in self.w_managers:
+        for w_manager in self.worker_managers:
             removed = w_manager.remove_mineral_field(unit_tag)
             if removed:
                 break
         if not removed:
-            for w_manager in self.w_managers:
+            for w_manager in self.worker_managers:
                 removed = w_manager.remove_worker_tag(unit_tag)
                 if removed:
                     break
         if not removed:
-            for w_manager in self.w_managers:
+            for w_manager in self.worker_managers:
                 if w_manager.base_tag == unit_tag:
                     w_manager.base_tag = None
                     removed = True
@@ -183,9 +212,10 @@ class MacroBot(BotAI):
         """
         # why doesn't work with all_my_units?
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
-        self.w_managers.append(WorkerManager(self, self.townhalls[0].tag))
+        self.worker_managers.append(WorkerManager(self, self.townhalls[0].tag))
         self.attack_managers.append(AttackManager(self))
-        self.s_managers.append(ScoutingManager(self))
+        self.attack_managers.append(AttackManager(self, True))
+        self.scouting_managers.append(ScoutingManager(self))
 
         # TODO: Future features:
         # 1. self.danger_map = DangerMap(self, [640, 640])
@@ -206,9 +236,31 @@ class MacroBot(BotAI):
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
 
         # Orbital command
         self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
+        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+        self.build.add_item(BuildItem(UnitTypeId.REAPER, False))
+
+
+
         self.build.add_item(BuildItem(UnitTypeId.SCV, False))
         self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
         self.build.add_item(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
@@ -252,6 +304,7 @@ class MacroBot(BotAI):
         self.next_item = self.build.get_next_item()
 
     # TODO: add more items to build
+
     async def on_step(self, iteration: int):
         """
         The on_step function is called every iteration of the game. The iteration variable is the number of
@@ -263,11 +316,12 @@ class MacroBot(BotAI):
         """
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
         # if iteration == 0:
-        #     await self._client.debug_create_unit([[UnitTypeId.MARINE, 5, self._game_info.map_center, 1]])
+        #     await self._client.debug_create_unit([[UnitTypeId.REAPER, 5, self._game_info.map_center, 1]])
+        #     self.attack_managers[0].update(True)
 
         if iteration % self.fast_iteration_speed == 0:
-            for w_manager in self.w_managers:
-                w_manager.update()
+            for worker_manager in self.worker_managers:
+                worker_manager.update()
 
             if self.next_item:
                 if self.can_afford(self.next_item.item_ID):
@@ -280,10 +334,12 @@ class MacroBot(BotAI):
                 self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
                 self.next_item = self.build.get_next_item()
 
-            for s_manager in self.s_managers:
+            for s_manager in self.scouting_managers:
                 await s_manager.scout()
 
             for attack_manager in self.attack_managers:
+                if attack_manager.army_count > 10:
+                    attack_manager.update(True)
                 attack_manager.update()
 
         if iteration % self.medium_iteration_speed == 0:
@@ -311,7 +367,7 @@ class MacroBot(BotAI):
         if unit.is_structure:
             tech_requirement = self.tech_requirement_progress(unit.item_ID)
             if tech_requirement == 1:
-                succeeded = await self.w_managers[0].build_structure(unit)
+                succeeded = await self.worker_managers[0].build_structure(unit)
             return succeeded
 
         train_structure_types = UNIT_TRAINED_FROM[unit.item_ID]

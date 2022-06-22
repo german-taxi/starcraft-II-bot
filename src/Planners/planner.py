@@ -14,10 +14,10 @@ class Plan():
         self.__time = np.array([0])
         self.__mineral_collection_rate = np.array([0])
         self.__mining_workers = sum(
-            [w_manager.occupation.amount for w_manager in self.__bot.w_managers])
+            [w_manager.occupation.amount for w_manager in self.__bot.worker_managers])
         self.__working_until = [0 for _ in range(self.__bot.townhalls.amount)]
         self.__empty_worker_space_total = sum(
-            [self.__empty_worker_space(w_manager) for w_manager in self.__bot.w_managers])
+            [self.__empty_worker_space(w_manager) for w_manager in self.__bot.worker_managers])
         self.__mineral_guess = None
         self.__buildings_under_construction = []
 
