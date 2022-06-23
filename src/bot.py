@@ -95,7 +95,7 @@ class MacroBot(BotAI):
             for attack_manager in self.attack_managers:
                 if not attack_manager.is_fighting():
                     attack_manager.add_army_tag(unit.tag)
-                    # print("Added to army manager") # Debug
+                    print("Added to army manager")
                     break
             else:
                 print("No attack_manager found, adding new one")
@@ -106,7 +106,7 @@ class MacroBot(BotAI):
             for attack_manager in self.attack_managers:
                 if attack_manager.is_fighting():
                     attack_manager.add_army_tag(unit.tag)
-                    # print("Added to army manager") # Debug
+                    print("Added to army manager")
                     break
             else:
                 print("No attack_manager found, adding new one")
@@ -189,11 +189,15 @@ class MacroBot(BotAI):
           unit (Unit): Unit
         """
         print("Building complete: " + str(unit.type_id))
-        if unit.type_id == UnitTypeId.COMMANDCENTER:
-            for worker_manager in self.worker_managers:
-                if worker_manager.base_tag == unit.tag:
-                    worker_manager.update_collectable_fields()
+        if unit.type_id == UnitTypeId.REFINERY:
+            for waiting_for_structure in self.waiting_for_structures:
+                if unit.distance_to(waiting_for_structure[1]) < 3:
+                    waiting_for_structure[0].building_tag = unit.tag
+                    self.waiting_for_structures.pop(0)
+                    print("Refinery tagged")
                     break
+            else:
+                print("Refinery not found")
 
     async def on_building_construction_started(self, unit: Unit):
         """
@@ -207,27 +211,14 @@ class MacroBot(BotAI):
         self.unit_by_tag[unit.tag] = unit
 
         if unit.type_id == UnitTypeId.COMMANDCENTER:
-            for worker_manager in self.worker_managers:
-                if worker_manager.base_tag is None:
-                    worker_manager.set_base_tag(unit.tag)
-                    # print("Base tagged, on empty manager")      # DEBUG
+            for w_manager in self.worker_managers:
+                if w_manager.base_tag is None:
+                    w_manager.set_base_tag(unit.tag)
+                    print("Base tagged, on empty manager")
                     break
             else:
-                # print("No w_manager found, adding new one")       # DEBUG
+                print("No w_manager found, adding new one")
                 self.worker_managers.append(WorkerManager(self, unit.tag))
-        elif unit.type_id == UnitTypeId.REFINERY:
-            remove = []
-            for waiting_for_structure in self.waiting_for_structures:
-                if unit.distance_to(waiting_for_structure[1]) < 2:
-                    waiting_for_structure[0].building_tag = unit.tag
-                    remove.append(waiting_for_structure)
-                    # self.waiting_for_structures.pop(0)
-                    # print("Refinery tagged")                     # DEBUG
-                    break
-            else:
-                print("Refinery not found")                   # DEBUG
-            for i in remove:
-                self.waiting_for_structures.remove(i)
 
     async def on_unit_destroyed(self, unit_tag: int):
         """
@@ -373,6 +364,11 @@ class MacroBot(BotAI):
         if iteration % self.slow_iteration_speed == 0:
             pass
 
+        '''
+
+        very_slow_iteration_speed helps to add one unit to scouting manager once in a minute
+        
+        '''
         if iteration % self.very_slow_iteration_speed == 0:
             self.scouting_managers[0].add_scout_tag(self.workers[0].tag)
             # print(self.scouting_managers[0]._scout_tags)
@@ -398,11 +394,7 @@ class MacroBot(BotAI):
         if unit.is_structure:
             tech_requirement = self.tech_requirement_progress(unit.item_ID)
             if tech_requirement == 1:
-                for worker_manager in self.worker_managers:
-                    succeeded = await worker_manager.build_structure(unit)
-                    if succeeded:
-                        break
-
+                succeeded = await self.worker_managers[0].build_structure(unit)
             return succeeded
 
         train_structure_types = UNIT_TRAINED_FROM[unit.item_ID]
@@ -412,6 +404,7 @@ class MacroBot(BotAI):
                     structure.train(unit.item_ID)
                     succeeded = True
                     break
+
         return succeeded
 
 
@@ -421,10 +414,3 @@ if __name__ == "__main__":
         Bot(Race.Terran, MacroBot()),
         Computer(Race.Protoss, Difficulty.Easy, ai_build=AIBuild.Macro)
     ], realtime=False)
-
-
-
-# bash
-# open file and print letter by letter
-
-#! b
