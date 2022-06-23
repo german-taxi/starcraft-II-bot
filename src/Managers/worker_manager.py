@@ -1,8 +1,8 @@
 from sc2.ids.unit_typeid import UnitTypeId
-from Managers.manager import Manager
+#from Managers.manager import Manager
+from src.Managers.manager import Manager
 
 
-# > A class that represents a mineral field.
 class MineralField:
     def __init__(self, bot, tag):
         self._bot = bot
@@ -108,7 +108,7 @@ class WorkerManager(Manager):
         self.gas_fields = []
         self.free_worker_tags = []
         self.building_worker_tags = []
-        self.create_collectable_fields()
+        self.update_collectable_fields()
 
     def update(self):
         """
@@ -150,7 +150,7 @@ class WorkerManager(Manager):
                 return True
         return False
 
-    def create_collectable_fields(self, position=None):
+    def update_collectable_fields(self, position=None):
         """
         It creates a list of mineral fields and gas fields that are close to the base
 
@@ -161,14 +161,22 @@ class WorkerManager(Manager):
             position = self.bot.get_unit_by_tag(self.base_tag).position
 
         if position:
+            for mineral_field in self.mineral_fields:
+                for _ in range(mineral_field.occupation):
+                    self.free_worker_tags.append(mineral_field.get_random_worker_tag())
+            for gas_field in self.gas_fields:
+                for _ in range(gas_field.occupation):
+                    self.free_worker_tags.append(gas_field.get_random_worker_tag())
+
             self.gas_fields.clear()
             self.mineral_fields.clear()
-            mineral_fields = self.bot.mineral_field.closer_than(10, position) \
+            mineral_fields = self.bot.mineral_field.closer_than(15, position) \
                 .sorted(lambda x: x.distance_to(position))
 
-            gas_fields = self.bot.vespene_geyser.closer_than(10, position) \
+            gas_fields = self.bot.vespene_geyser.closer_than(15, position) \
                 .sorted(lambda x: x.distance_to(position))
 
+            print("Found {} mineral fields and {} gas fields".format(len(mineral_fields), len(gas_fields)))     # Debug
             for gas_field in gas_fields:
                 self.gas_fields.append(GasField(self.bot, gas_field.tag))
 
@@ -184,6 +192,7 @@ class WorkerManager(Manager):
           base_tag: The base tag for the image.
         """
         self.base_tag = base_tag
+        self.update_collectable_fields()
 
     def add_worker_tag(self, worker_tag):
         """
@@ -252,10 +261,12 @@ class WorkerManager(Manager):
         tags_to_remove = []
         for free_worker_tag in self.free_worker_tags:
             for gas_field in self.gas_fields:
-                if gas_field.building_tag and gas_field.occupation < self.WORKERS_PER_GAS:
-                    gas_field.add_worker(free_worker_tag)
-                    tags_to_remove.append(free_worker_tag)
-                    # print("Gas field occupation: ", gas_field.occupation) # Debug
+                if gas_field.building_tag not in [None, 1] and gas_field.occupation < self.WORKERS_PER_GAS:
+                    refinery = self.bot.get_unit_by_tag(gas_field.building_tag)
+                    if refinery.build_progress == 1:
+                        gas_field.add_worker(free_worker_tag)
+                        tags_to_remove.append(free_worker_tag)
+                        # print("Gas field occupation: ", gas_field.occupation) # Debug
                     break
             else:
                 break
@@ -328,6 +339,8 @@ class WorkerManager(Manager):
         Returns:
           True or False
         """
+        for gas in self.gas_fields:
+            print("Gas field: ", gas.building_tag)
         for gas_field in self.gas_fields:
             if gas_field.building_tag is None:
                 placement_unit = self.bot.get_unit_by_tag(gas_field.tag)
@@ -340,7 +353,13 @@ class WorkerManager(Manager):
                         self.building_worker_tags.append(worker.tag)
                         self.bot.waiting_for_structures.append(
                             [gas_field, self.bot.get_unit_by_tag(gas_field.tag).position])
+                        gas_field.building_tag = 1      # Set tag to 1 to indicate that it is reserved for a structure
+                        print("BUILDING GAS!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                        # TODO: Remove this if unit dies before building starts
                         return True
+            #         else: print("!!!")
+            #     else: print("!")
+            # else: print("!!")
         return False
 
     async def build_structure(self, structure):

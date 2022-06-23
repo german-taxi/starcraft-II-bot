@@ -1,7 +1,8 @@
 from sc2 import units as Units
 from sc2.ids.unit_typeid import UnitTypeId as UnitID
 
-from Managers.manager import Manager
+# from Managers.manager import Manager
+from src.Managers.manager import Manager
 
 
 # > This class is used to manage the attack of the bot
@@ -38,7 +39,7 @@ class AttackManager(Manager):
         self.__army_tags.add(tag)
         # later :self.bot.calculate_supply_cost(unit.type_id)
         self.army_count += 1
-        print("Added army tag: ", tag)
+        # print("Added army tag: ", tag)    # DEBUG
 
     def remove_army_tag(self, tag):
         """

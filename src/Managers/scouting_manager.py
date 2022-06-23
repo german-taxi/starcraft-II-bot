@@ -2,10 +2,10 @@ import random
 from sc2 import position
 from sc2.ids.unit_typeid import UnitTypeId
 
-from Managers.manager import Manager
+# from Managers.manager import Manager
+from src.Managers.manager import Manager
 
 
-# It's a class that manages the scouting system
 class ScoutingManager(Manager):
     def __init__(self, bot):
         super().__init__()
@@ -44,7 +44,7 @@ class ScoutingManager(Manager):
             # if scout.is_idle:
                 enemy_location = self.__bot.enemy_start_locations[0]
                 move_to = self.__random_location_variance(enemy_location)
-                self.__bot.do(scout.move(move_to))
+                scout.move(move_to)
                 
         
 
