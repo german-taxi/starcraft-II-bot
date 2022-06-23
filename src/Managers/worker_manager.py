@@ -1,5 +1,5 @@
 from sc2.ids.unit_typeid import UnitTypeId
-from src.Managers.manager import Manager
+from Managers.manager import Manager
 
 
 # > A class that represents a mineral field.
