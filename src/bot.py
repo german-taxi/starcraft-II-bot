@@ -43,6 +43,7 @@ class MacroBot(BotAI):
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
+        self.very_slow_iteration_speed = 250
         self.scouting_managers = []
         self.waiting_for_structures = []
         self.attack_managers = []
@@ -328,9 +329,9 @@ class MacroBot(BotAI):
                 attack_manager.update(True)
             attack_manager.update()
 
-    async def update_scouting_managers(self):
+    def update_scouting_managers(self):
         for s_manager in self.scouting_managers:
-            await s_manager.scout()
+            s_manager.update()
 
     async def on_step(self, iteration: int):
         """
@@ -345,6 +346,8 @@ class MacroBot(BotAI):
         # for item in self.build.build_list:
         #     print(item.item_ID)
         # if iteration == 0:
+            
+            
         #     await self._client.debug_create_unit([[UnitTypeId.REAPER, 5, self._game_info.map_center, 1]])
         #     self.attack_managers[0].update(True)
 
@@ -352,7 +355,7 @@ class MacroBot(BotAI):
             self.recalculate_state()
             self.update_worker_managers()
             await self.update_build()
-            await self.update_scouting_managers()
+            self.update_scouting_managers()
             self.update_attack_managers()
 
         if iteration % self.medium_iteration_speed == 0:
@@ -360,6 +363,12 @@ class MacroBot(BotAI):
 
         if iteration % self.slow_iteration_speed == 0:
             pass
+
+        if iteration % self.very_slow_iteration_speed == 0:
+            self.scouting_managers[0].add_scout_tag(self.workers[0].tag)
+            # print(self.scouting_managers[0]._scout_tags)
+            self.worker_managers[0].remove_worker_tag(self.workers[0].tag)
+            print("Unit is going to scout to enemy base.")
 
     async def produce(self, unit):
         """

@@ -1,7 +1,7 @@
 from sc2 import units as Units
 from sc2.ids.unit_typeid import UnitTypeId as UnitID
 
-from src.Managers.manager import Manager
+from Managers.manager import Manager
 
 
 # > This class is used to manage the attack of the bot
