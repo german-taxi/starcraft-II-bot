@@ -17,7 +17,6 @@ class ScoutingManager(Manager):
     def add_scout_tag(self, scout_tag):
         """
         The function adds the unit's tag to the scout_tags set, and then increments the occupation by 1
-
         Args:
           tag: The unit that we want to add to the scouting.
         """
@@ -27,10 +26,8 @@ class ScoutingManager(Manager):
     def remove_scout_tag(self, scout_tag):
         """
         It removes the tag from the set of scout tags, and decrements the occupation
-
         Args:
           tag: The tag of the scouts you want to remove.
-
         Returns:
           A boolean value.
         """
@@ -44,7 +41,6 @@ class ScoutingManager(Manager):
     def get_random_scout_tag(self):
         """
         If there are scout tags available, return one and decrement the occupation count
-
         Returns:
           A random scout tag is being returned.
         """
@@ -56,40 +52,36 @@ class ScoutingManager(Manager):
 
     def update(self):
         """
-
         The function updates the scouting manager
-
         """
 
         scouts = self.__bot.get_units_by_tag(self._scout_tags)
 
         for scout in scouts:
             # if scout.is_idle:
-                self.scouting(scout)                        
+            self.scouting(scout)
 
     def scouting(self, scout):
         #  if len(self._scout_tags) > 0:
         #     scout = self._scout_tags[0]
-            # if scout.is_idle:
+        # if scout.is_idle:
         enemy_location = self.__bot.enemy_start_locations[0]
         move_to = self.__random_location_variance(enemy_location)
         scout.move(move_to)
-                
+
     def __random_location_variance(self, location):
         """
         It takes the enemy start location, adds a random number between -5 and 5 to the x and y
         coordinates, then divides that number by 100 and multiplies it by the enemy start location
-
         Args:
           enemy_start_location: This is the location of the enemy base.
-
         Returns:
           The go_to variable is being returned.
         """
         x = location[0]
         y = location[1]
 
-   
+
         x += random.randrange(-5,5)
         y += random.randrange(-5,5)
 
