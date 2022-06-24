@@ -15,10 +15,26 @@ class ScoutingManager(Manager):
         self.occupation = 0
 
     def add_scout_tag(self, scout_tag):
+        """
+        The function adds the unit's tag to the scout_tags set, and then increments the occupation by 1
+
+        Args:
+          tag: The unit that we want to add to the scouting.
+        """
         self._scout_tags.add(scout_tag)
         self.occupation += 1
 
     def remove_scout_tag(self, scout_tag):
+        """
+        It removes the tag from the set of scout tags, and decrements the occupation
+
+        Args:
+          tag: The tag of the scouts you want to remove.
+
+        Returns:
+          A boolean value.
+        """
+
         if scout_tag in self._scout_tags:
             self._scout_tags.discard(scout_tag)
             self.occupation -= 1
@@ -26,12 +42,25 @@ class ScoutingManager(Manager):
         return False
 
     def get_random_scout_tag(self):
+        """
+        If there are scout tags available, return one and decrement the occupation count
+
+        Returns:
+          A random scout tag is being returned.
+        """
+
         if self._scout_tags:
             self.occupation -= 1
             return self._scout_tags.pop()
         return None
 
     def update(self):
+        """
+
+        The function updates the scouting manager
+
+        """
+
         scouts = self.__bot.get_units_by_tag(self._scout_tags)
 
         for scout in scouts:
@@ -46,11 +75,9 @@ class ScoutingManager(Manager):
         move_to = self.__random_location_variance(enemy_location)
         scout.move(move_to)
                 
-        
-
     def __random_location_variance(self, location):
         """
-        It takes the enemy start location, adds a random number between -20 and 20 to the x and y
+        It takes the enemy start location, adds a random number between -5 and 5 to the x and y
         coordinates, then divides that number by 100 and multiplies it by the enemy start location
 
         Args:
