@@ -120,7 +120,8 @@ class MacroBot(BotAI):
         free_worker_space = 0
         for worker_manager in self.worker_managers:
             free_worker_space += worker_manager.get_empty_space()
-        if free_worker_space > 0:
+        # print(free_worker_space, " free worker space", len(self.workers.filter(lambda unit: unit.is_idle)), " idle workers")) # Debug
+        if free_worker_space > len(self.workers.filter(lambda unit: unit.is_idle)):
             return True
         return False
 
@@ -189,11 +190,6 @@ class MacroBot(BotAI):
           unit (Unit): Unit
         """
         print("Building complete: " + str(unit.type_id))
-        if unit.type_id == UnitTypeId.COMMANDCENTER:
-            for worker_manager in self.worker_managers:
-                if worker_manager.base_tag == unit.tag:
-                    worker_manager.update_collectable_fields()
-                    break
 
     async def on_building_construction_started(self, unit: Unit):
         """
@@ -221,7 +217,6 @@ class MacroBot(BotAI):
                 if unit.distance_to(waiting_for_structure[1]) < 2:
                     waiting_for_structure[0].building_tag = unit.tag
                     remove.append(waiting_for_structure)
-                    # self.waiting_for_structures.pop(0)
                     # print("Refinery tagged")                     # DEBUG
                     break
             else:
@@ -308,7 +303,7 @@ class MacroBot(BotAI):
         item_to_build = self.build.first_item()
         if self.build_workers and self.can_afford(UnitID.SCV):
             succeeded = await self.produce(BuildItem(UnitTypeId.SCV, False))
-        if self.build_depot and item_to_build and item_to_build.item_ID != UnitTypeId.SUPPLYDEPOT:
+        if self.build_depot and (not item_to_build or item_to_build.item_ID != UnitTypeId.SUPPLYDEPOT):
             self.build.add_to_start(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
             print("Added supply depot to start")
             self.build_depot = False
@@ -321,9 +316,6 @@ class MacroBot(BotAI):
                 if succeeded:
                     print("Producing: " + str(item_to_build.item_ID))
                     self.build.get_next_item()
-        else:
-            self.build.add_item(BuildItem(UnitTypeId.SCV, False))
-            self.build.add_item(BuildItem(UnitTypeId.MARINE, False))
 
     def update_worker_managers(self):
         """
@@ -364,7 +356,7 @@ class MacroBot(BotAI):
             self.recalculate_state()
             self.update_worker_managers()
             await self.update_build()
-            self.update_scouting_managers()
+            # self.update_scouting_managers()
             self.update_attack_managers()
 
         if iteration % self.medium_iteration_speed == 0:
@@ -374,10 +366,11 @@ class MacroBot(BotAI):
             pass
 
         if iteration % self.very_slow_iteration_speed == 0:
-            self.scouting_managers[0].add_scout_tag(self.workers[0].tag)
+            pass
+            # self.scouting_managers[0].add_scout_tag(self.workers[0].tag)
             # print(self.scouting_managers[0]._scout_tags)
-            self.worker_managers[0].remove_worker_tag(self.workers[0].tag)
-            print("Unit is going to scout to enemy base.")
+            # self.worker_managers[0].remove_worker_tag(self.workers[0].tag)
+            # print("Unit is going to scout to enemy base.")
 
     async def produce(self, unit):
         """
@@ -392,7 +385,6 @@ class MacroBot(BotAI):
           The return value is a boolean value.
         """
         succeeded = False
-
         # print("train_structure_type: " + str(train_structure_types))  # Debug
 
         if unit.is_structure:
@@ -421,10 +413,3 @@ if __name__ == "__main__":
         Bot(Race.Terran, MacroBot()),
         Computer(Race.Protoss, Difficulty.Easy, ai_build=AIBuild.Macro)
     ], realtime=False)
-
-
-
-# bash
-# open file and print letter by letter
-
-#! b

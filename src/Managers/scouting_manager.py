@@ -42,9 +42,9 @@ class ScoutingManager(Manager):
         #  if len(self._scout_tags) > 0:
         #     scout = self._scout_tags[0]
             # if scout.is_idle:
-                enemy_location = self.__bot.enemy_start_locations[0]
-                move_to = self.__random_location_variance(enemy_location)
-                scout.move(move_to)
+        enemy_location = self.__bot.enemy_start_locations[0]
+        move_to = self.__random_location_variance(enemy_location)
+        scout.move(move_to)
                 
         
 
