@@ -1,4 +1,4 @@
-from src.Helpers.mineral_field import MineralField
+from src.Other.mineral_field import MineralField
 
 
 # Class representing a gas field

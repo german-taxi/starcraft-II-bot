@@ -1,7 +1,7 @@
 from sc2.ids.unit_typeid import UnitTypeId
 #from Managers.manager import Manager
-from src.Helpers.gas_field import GasField
-from src.Helpers.mineral_field import MineralField
+from src.Other.gas_field import GasField
+from src.Other.mineral_field import MineralField
 from src.Managers.manager import Manager
 
 
@@ -136,6 +136,23 @@ class WorkerManager(Manager):
             if removed:
                 break
         return removed
+
+    def remove_random_worker(self):
+        """
+        It removes a random worker from the list of free workers. Or mineral_field/gas_field if there is no free workers.
+
+        Returns:
+          The tag of the worker that was removed.
+        """
+        if len(self.free_worker_tags) > 0:
+            return self.free_worker_tags.pop()
+        for mineral_field in self.mineral_fields:
+            if mineral_field.occupation != 0:
+                return mineral_field.get_random_worker_tag()
+        for gas_field in self.gas_fields:
+            if gas_field.occupation != 0:
+                return gas_field.get_random_worker_tag()
+        return None
 
     def __fix_idle_buildings_worker(self):
         """
@@ -311,10 +328,11 @@ class WorkerManager(Manager):
             placement_position = await self.bot.get_next_expansion()
         else:
             map_center = self.bot.game_info.map_center
-            position_towards_map_center = self.bot.start_location.towards(
+            base = self.bot.get_unit_by_tag(self.base_tag)
+            position_towards_map_center = base.position.towards(
                 map_center, distance=11)
             placement_position = await self.bot.find_placement(structure.item_ID, near=position_towards_map_center,
-                                                               placement_step=1)
+                                                               placement_step=4)
 
         # TODO: Handle the case of placement_position being defined, but there being no position available
         if placement_position:

@@ -81,7 +81,7 @@ class AttackManager(Manager):
             return
 
         ground_enemy_units = self.__bot.enemy_units.filter(
-            lambda unit: not unit.is_flying and unit.type_id not in {UnitID.LARVA, UnitID.EGG})
+            lambda unit: unit.type_id not in {UnitID.LARVA, UnitID.EGG})    # not unit.is_flying     removed
 
         enemy_fighters = ground_enemy_units.filter(lambda u: u.can_attack) + self.__bot.enemy_structures(
             {UnitID.BUNKER, UnitID.SPINECRAWLER, UnitID.PHOTONCANNON})

@@ -16,6 +16,7 @@ from Planners.build import Build, BuildItem
 from Managers.attack_manager import AttackManager
 from Managers.worker_manager import WorkerManager
 from Managers.scouting_manager import ScoutingManager
+
 # from src.Planners.build import Build, BuildItem
 # from src.Managers.army_manager import ArmyManager
 # from src.Managers.worker_manager import WorkerManager
@@ -25,10 +26,9 @@ from Managers.scouting_manager import ScoutingManager
 map_name = "AcropolisLE"
 print(sys.version)
 
+
 # This class is the main class that contains all the functions that are used to control the bot, that can
 # play the game of Starcraft 2.
-
-
 class MacroBot(BotAI):
     def __init__(self):
         super().__init__()
@@ -43,7 +43,7 @@ class MacroBot(BotAI):
         self.fast_iteration_speed = 1
         self.medium_iteration_speed = 3
         self.slow_iteration_speed = 15
-        self.very_slow_iteration_speed = 250
+        self.very_slow_iteration_speed = 400
         self.scouting_managers = []
         self.waiting_for_structures = []
         self.attack_managers = []
@@ -101,6 +101,7 @@ class MacroBot(BotAI):
                 print("No attack_manager found, adding new one")
                 self.attack_managers.append(AttackManager(self))
                 self.attack_managers[-1].add_army_tag(unit.tag)
+
         # adding unit to attacking manager
         else:
             for attack_manager in self.attack_managers:
@@ -133,7 +134,7 @@ class MacroBot(BotAI):
 
         for unit in self.structures.filter(lambda unit: unit.type_id in {
             UnitID.SUPPLYDEPOT, UnitID.COMMANDCENTER}):
-            if not unit.is_ready:   # under construction
+            if not unit.is_ready:  # under construction
                 if unit.type_id == UnitID.SUPPLYDEPOT:
                     supply_already_building += 8
                 elif unit.build_progress > 0.65:
@@ -141,7 +142,7 @@ class MacroBot(BotAI):
 
         for unit in self.placeholders.filter(lambda unit: unit.type_id in {
             UnitID.SUPPLYDEPOT, UnitID.COMMANDCENTER}):
-            if not unit.is_ready:   # worker on the way to build it
+            if not unit.is_ready:  # worker on the way to build it
                 if unit.type_id == UnitID.SUPPLYDEPOT:
                     supply_already_building += 8
 
@@ -160,6 +161,35 @@ class MacroBot(BotAI):
         self.build_workers = self.should_build_workers()
         self.build_depot = self.should_build_depot()
 
+    def update_worker_managers(self):
+        """
+        The function is called every frame. It updates all the worker managers.
+        """
+        for worker_manager in self.worker_managers:
+            worker_manager.update()
+
+    def update_attack_managers(self):
+        for attack_manager in self.attack_managers:
+            if attack_manager.army_count > 10:
+                attack_manager.update(True)
+            attack_manager.update()
+
+    def update_scouting_managers(self):
+        for s_manager in self.scouting_managers:
+            s_manager.update()
+
+    def request_for_worker(self):
+        for worker_manager in self.worker_managers:
+            tag = worker_manager.remove_random_worker()
+            if tag:
+                return tag
+        return None
+
+    def add_scout(self, tag):
+        if tag:
+            self.scouting_managers[0].add_scout_tag(tag)
+            print("Added scout")
+
     async def on_unit_created(self, unit: Unit):
         """
         If the unit is an SCV, then it will find the closest worker manager and add the SCV to that worker
@@ -172,13 +202,14 @@ class MacroBot(BotAI):
 
         if unit.type_id == UnitTypeId.SCV:
             for w_manager in self.worker_managers:
-                if self.get_unit_by_tag(w_manager.base_tag).position.is_closer_than(10, unit):
+                if w_manager.base_tag and self.get_unit_by_tag(w_manager.base_tag).position.is_closer_than(10, unit):
                     w_manager.add_worker_tag(unit.tag)
                     break
             else:
                 print("Didn't find close worker manager")
 
-        if unit.type_id in [UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED, UnitID.HELLION]:
+        if unit.type_id in [UnitID.MARINE, UnitID.SIEGETANK, UnitID.MEDIVAC, UnitID.REAPER, UnitID.SIEGETANKSIEGED,
+                            UnitID.HELLION]:
             self.attack_managers[0].add_army_tag(unit.tag)
 
     async def on_building_construction_complete(self, unit: Unit):
@@ -220,7 +251,7 @@ class MacroBot(BotAI):
                     # print("Refinery tagged")                     # DEBUG
                     break
             else:
-                print("Refinery not found")                   # DEBUG
+                print("Refinery not found")  # DEBUG
             for i in remove:
                 self.waiting_for_structures.remove(i)
 
@@ -263,7 +294,8 @@ class MacroBot(BotAI):
     async def on_start(self):
         """
         The function is called when the game starts. It creates a dictionary of all the units in the game
-        and assigns them a tag. It also creates a worker manager, an army manager, and a scouting manager
+        and assigns them a tag. It also creates a worker manager, an army manager, and a scouting manager.
+        As well as starting build order.
         """
         # why doesn't work with all_my_units?
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
@@ -281,35 +313,38 @@ class MacroBot(BotAI):
         self.build = Build(self)
 
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
-        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
         self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
         self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
         self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
-        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
-        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
         self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
         self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
+        self.build.add_item(BuildItem(UnitTypeId.REFINERY, True))
+        self.build.add_item(BuildItem(UnitTypeId.COMMANDCENTER, True))
 
     async def update_build(self):
         """
         The function is called every frame. it manages all things related to the build order.
         """
         item_to_build = self.build.first_item()
+        # Building workers
         if self.build_workers and self.can_afford(UnitID.SCV):
             succeeded = await self.produce(BuildItem(UnitTypeId.SCV, False))
+
+        # Building supply depots
         if self.build_depot and (not item_to_build or item_to_build.item_ID != UnitTypeId.SUPPLYDEPOT):
             self.build.add_to_start(BuildItem(UnitTypeId.SUPPLYDEPOT, True))
             print("Added supply depot to start")
             self.build_depot = False
 
-        succeeded = await self.produce(BuildItem(UnitTypeId.REAPER, False))
+        # Building army
+        if self.can_afford(UnitID.REAPER):
+            succeeded = await self.produce(BuildItem(UnitTypeId.REAPER, False))
+        elif self.can_afford(UnitID.MARINE):
+            succeeded = await self.produce(BuildItem(UnitTypeId.MARINE, False))
 
+        # Building regular infrastructure
         if item_to_build:
             if self.can_afford(item_to_build.item_ID):
                 succeeded = await self.produce(item_to_build)
@@ -317,22 +352,9 @@ class MacroBot(BotAI):
                     print("Producing: " + str(item_to_build.item_ID))
                     self.build.get_next_item()
 
-    def update_worker_managers(self):
-        """
-        The function is called every frame. It updates all the worker managers.
-        """
-        for worker_manager in self.worker_managers:
-            worker_manager.update()
-
-    def update_attack_managers(self):
-        for attack_manager in self.attack_managers:
-            if attack_manager.army_count > 10:
-                attack_manager.update(True)
-            attack_manager.update()
-
-    def update_scouting_managers(self):
-        for s_manager in self.scouting_managers:
-            s_manager.update()
+        # Building extra Barracks
+        else:
+            self.build.add_item(BuildItem(UnitTypeId.BARRACKS, True))
 
     async def on_step(self, iteration: int):
         """
@@ -344,33 +366,21 @@ class MacroBot(BotAI):
           iteration (int): int
         """
         self.unit_by_tag = {unit.tag: unit for unit in self.all_units}
-        # for item in self.build.build_list:
-        #     print(item.item_ID)
-        # if iteration == 0:
-            
-            
-        #     await self._client.debug_create_unit([[UnitTypeId.REAPER, 5, self._game_info.map_center, 1]])
-        #     self.attack_managers[0].update(True)
 
         if iteration % self.fast_iteration_speed == 0:
-            self.recalculate_state()
             self.update_worker_managers()
             await self.update_build()
-            # self.update_scouting_managers()
+            self.update_scouting_managers()
             self.update_attack_managers()
 
         if iteration % self.medium_iteration_speed == 0:
             pass
 
         if iteration % self.slow_iteration_speed == 0:
-            pass
+            self.recalculate_state()
 
         if iteration % self.very_slow_iteration_speed == 0:
-            pass
-            # self.scouting_managers[0].add_scout_tag(self.workers[0].tag)
-            # print(self.scouting_managers[0]._scout_tags)
-            # self.worker_managers[0].remove_worker_tag(self.workers[0].tag)
-            # print("Unit is going to scout to enemy base.")
+            self.add_scout(self.request_for_worker())
 
     async def produce(self, unit):
         """
@@ -382,7 +392,7 @@ class MacroBot(BotAI):
           unit: The unit to be produced.
 
         Returns:
-          The return value is a boolean value.
+          The return value is a boolean success value.
         """
         succeeded = False
         # print("train_structure_type: " + str(train_structure_types))  # Debug
@@ -411,5 +421,7 @@ class MacroBot(BotAI):
 if __name__ == "__main__":
     run_game(maps.get(map_name), [
         Bot(Race.Terran, MacroBot()),
-        Computer(Race.Protoss, Difficulty.Easy, ai_build=AIBuild.Macro)
+        Computer(Race.Terran, Difficulty.Hard, ai_build=AIBuild.Macro)
     ], realtime=False)
+# Race: Terran, Protoss, Zerg
+# Difficulty: Easy, Medium, Hard, VeryHard(Elite)
